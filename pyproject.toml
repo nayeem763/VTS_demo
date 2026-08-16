@@ -1,0 +1,99 @@
+[project]
+name = "cu-vts"
+version = "1.0.0"
+description = "CU Vehicle Tracking System — a modular Django monolith for live campus bus tracking."
+requires-python = ">=3.12,<3.14"
+
+# ---------------------------------------------------------------------------
+# Ruff — linter + formatter (replaces black, isort, flake8)
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+# ``docs/*`` holds prose with illustrative (sometimes abbreviated) code fences;
+# they are documentation, not source, so the formatter should not police them.
+extend-exclude = ["**/migrations/*", "static/vendor/*", "docs/*"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "DJ",   # flake8-django
+    "SIM",  # flake8-simplify
+    "RUF",  # ruff-specific rules
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Settings modules layer via ``from .base import *`` — star imports are intentional.
+"config/settings/*.py" = ["F403", "F405"]
+# Migrations are generated; do not lint their style.
+"**/migrations/*.py" = ["E501", "RUF012"]
+# Django model ``Meta`` (ordering/constraints/indexes), DRF serializer ``Meta``
+# and view ``permission_classes`` are framework idioms declared as plain
+# class-level lists. RUF012's ``ClassVar`` demand does not fit them.
+"**/models.py" = ["RUF012"]
+"apps/*/api/serializers.py" = ["RUF012"]
+"apps/*/api/views.py" = ["RUF012"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "config"]
+
+# ---------------------------------------------------------------------------
+# pytest / pytest-django
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["test_*.py", "*_test.py", "tests.py"]
+testpaths = ["apps"]
+addopts = "-q --strict-markers --strict-config"
+filterwarnings = [
+    # WhiteNoise warns that STATIC_ROOT has no collected files; expected in
+    # tests/dev where collectstatic has not run. Harmless — silence just this.
+    "ignore:No directory at:UserWarning",
+]
+
+# ---------------------------------------------------------------------------
+# Coverage
+# ---------------------------------------------------------------------------
+[tool.coverage.run]
+branch = true
+source = ["apps"]
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "*/apps.py",
+    "manage.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "def __repr__",
+]
+
+# ---------------------------------------------------------------------------
+# mypy (+ django-stubs). Configured pragmatically: type-checks first-party
+# code without demanding annotations on every Django/DRF internal.
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.13"
+plugins = ["mypy_django_plugin.main"]
+ignore_missing_imports = true
+warn_unused_configs = true
+check_untyped_defs = true
+exclude = ['(^|/)(migrations|tests)/', 'manage\.py']
+
+[[tool.mypy.overrides]]
+module = ["*.migrations.*", "config.settings.*"]
+ignore_errors = true
+
+[tool.django-stubs]
+django_settings_module = "config.settings.development"

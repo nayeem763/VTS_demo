@@ -1,0 +1,13 @@
+# Base runtime dependencies — required in every environment (dev, test, prod).
+# These are imported at settings-load time (middleware / installed apps), so
+# they must be present even when running the test suite against SQLite.
+#
+# Pinned with compatible-release ranges: patch/minor updates are allowed, but
+# a major bump (which may break the API) requires a deliberate change here.
+
+Django>=5.2,<5.3                 # LTS; security support through ~2028
+djangorestframework>=3.15,<4.0   # versioned REST API layer
+dj-database-url>=2.2,<3.0        # parse DATABASE_URL (Supabase Postgres)
+python-decouple>=3.8,<4.0        # 12-factor settings from env / .env
+django-axes>=6.5,<8.0            # brute-force login lockout
+whitenoise>=6.6,<7.0             # static file serving (middleware, always on)

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Account Locked · CU-VTS{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-sm-10 col-md-7 col-lg-5">
+    <div class="card border-danger shadow-sm mt-4">
+      <div class="card-body p-4 p-md-5 text-center">
+        <div class="display-6 mb-2" aria-hidden="true">🔒</div>
+        <h1 class="h4 text-danger">Too many attempts</h1>
+        <p class="text-muted">
+          This account has been temporarily locked after several failed sign-in
+          attempts. Please wait a while before trying again, or contact your
+          administrator if you believe this is a mistake.
+        </p>
+        <a href="{% url 'web:public_map' %}" class="btn btn-outline-secondary mt-2">Back to live map</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

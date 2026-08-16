@@ -1,0 +1,6 @@
+# Production dependencies. Install with:  pip install -r requirements/production.txt
+-r base.txt
+
+gunicorn>=22.0,<24.0       # WSGI application server
+psycopg[binary]>=3.2,<4.0  # PostgreSQL driver (Supabase); binary wheels, no build toolchain
+sentry-sdk>=2.8,<3.0       # optional error reporting (enabled only when SENTRY_DSN is set)

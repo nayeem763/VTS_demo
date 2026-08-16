@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Trip History · CU-VTS{% endblock %}
+{% block nav_trips %}active{% endblock %}
+{% block main_class %}d-flex flex-column p-0{% endblock %}
+
+{% block content %}
+<div class="vts-split">
+  <div id="history-map" class="vts-map"
+       data-trips-url="{% url 'api:trip-list' %}"
+       data-center-lat="22.4716" data-center-lng="91.7876" data-zoom="14"></div>
+  <aside class="vts-side">
+    <div class="p-3 border-bottom">
+      <h1 class="h6 mb-2">Trip history</h1>
+      <div class="mb-2">
+        <label for="vehicle-select" class="form-label small mb-1">Vehicle</label>
+        <select id="vehicle-select" class="form-select form-select-sm">
+          <option value="">Choose a vehicle…</option>
+          {% for vehicle in vehicles %}
+            <option value="{{ vehicle.id }}">{{ vehicle.bus_number }}{% if vehicle.route_label %} · {{ vehicle.route_label }}{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-2">
+        <label for="date-input" class="form-label small mb-1">Date</label>
+        <input type="date" id="date-input" class="form-control form-control-sm" value="{% now 'Y-m-d' %}">
+      </div>
+      <div class="row g-2 mb-2">
+        <div class="col-6">
+          <label for="start-time" class="form-label small mb-1">From</label>
+          <input type="time" id="start-time" class="form-control form-control-sm">
+        </div>
+        <div class="col-6">
+          <label for="end-time" class="form-label small mb-1">To</label>
+          <input type="time" id="end-time" class="form-control form-control-sm">
+        </div>
+      </div>
+      <button id="load-trips" type="button" class="btn btn-primary btn-sm w-100">Load trips</button>
+      <div id="history-error" class="alert alert-warning small mt-2 mb-0 d-none" role="alert"></div>
+    </div>
+
+    <div id="trip-list" class="flex-grow-1 overflow-auto">
+      <div class="p-4 text-center text-muted small">Choose a vehicle and date, then load trips.</div>
+    </div>
+
+    <div class="p-3 border-top">
+      <div class="d-flex align-items-center gap-2">
+        <button id="play-btn" type="button" class="btn btn-outline-secondary btn-sm" disabled>▶ Play</button>
+        <input type="range" id="playback-range" class="form-range flex-grow-1" min="0" max="0" value="0" disabled
+               aria-label="Trip playback position">
+      </div>
+      <div id="play-info" class="small text-muted mt-1">Select a trip to replay its route.</div>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+
+{% block body_js %}
+<script src="{% static 'vendor/leaflet/leaflet.js' %}"></script>
+<script src="{% static 'js/vts-common.js' %}"></script>
+<script src="{% static 'js/trip-history.js' %}"></script>
+{% endblock %}

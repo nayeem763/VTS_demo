@@ -1,0 +1,93 @@
+{% load static %}<!doctype html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="same-origin">
+  <title>{% block title %}CU-VTS{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/leaflet/leaflet.css' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="d-flex flex-column min-vh-100 bg-body-tertiary">
+  <nav class="navbar navbar-expand-lg bg-primary" data-bs-theme="dark">
+    <div class="container-fluid">
+      <a class="navbar-brand fw-semibold" href="{% url 'web:public_map' %}">
+        <span aria-hidden="true">🚌</span> CU-VTS
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+              data-bs-target="#mainNav" aria-controls="mainNav"
+              aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="mainNav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link {% block nav_public %}{% endblock %}" href="{% url 'web:public_map' %}">Live Map</a>
+          </li>
+          {% if is_admin %}
+            <li class="nav-item">
+              <a class="nav-link {% block nav_dashboard %}{% endblock %}" href="{% url 'web:admin_dashboard' %}">Dashboard</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link {% block nav_trips %}{% endblock %}" href="{% url 'web:trip_history' %}">Trip History</a>
+            </li>
+          {% endif %}
+          {% if is_driver %}
+            <li class="nav-item">
+              <a class="nav-link {% block nav_tracker %}{% endblock %}" href="{% url 'web:tracker' %}">My Tracker</a>
+            </li>
+          {% endif %}
+        </ul>
+        <ul class="navbar-nav mb-2 mb-lg-0">
+          {% if user.is_authenticated %}
+            <li class="nav-item d-flex align-items-center me-lg-2">
+              <span class="navbar-text text-white-50 small">
+                {{ user.get_full_name|default:user.get_username }}
+              </span>
+            </li>
+            <li class="nav-item">
+              <form method="post" action="{% url 'accounts:logout' %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-light">Log out</button>
+              </form>
+            </li>
+          {% else %}
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'accounts:driver_login' %}">Driver Login</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'accounts:admin_login' %}">Admin Login</a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  {% if messages %}
+    <div class="container-fluid mt-3">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <main class="flex-grow-1 d-flex flex-column {% block main_class %}container py-4{% endblock %}">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="border-top py-3 mt-auto bg-body">
+    <div class="container-fluid text-center text-muted small">
+      CU Vehicle Tracking System &middot; <a href="{% url 'healthz' %}" class="link-secondary">status</a>
+    </div>
+  </footer>
+
+  <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+  {% block body_js %}{% endblock %}
+</body>
+</html>

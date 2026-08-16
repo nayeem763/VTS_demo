@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Driver Login · CU-VTS{% endblock %}
+{% block content %}
+  {% url 'accounts:admin_login' as admin_url %}
+  {% include "accounts/_login_card.html" with heading="Driver sign in" subtitle="Sign in to start sharing your bus location while on duty." accent="success" alt_text="Fleet administrator?" alt_url=admin_url alt_label="Use the admin login" %}
+{% endblock %}

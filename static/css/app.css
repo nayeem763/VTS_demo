@@ -1,0 +1,143 @@
+/* CU-VTS application styles. Kept intentionally small; Bootstrap does the
+   heavy lifting. Everything here supports the live maps and the tracker. */
+
+:root {
+  --vts-live: #198754;
+  --vts-stale: #f0ad4e;
+  --vts-offline: #adb5bd;
+}
+
+/* ---- Full-height map layouts --------------------------------------------- */
+.vts-split {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: calc(100vh - 128px);
+}
+
+.vts-map {
+  flex: 1 1 auto;
+  min-height: 60vh;
+  z-index: 0; /* keep tiles beneath Bootstrap dropdowns/navbar */
+  background: #e9ecef;
+}
+
+.vts-side {
+  width: 340px;
+  flex: 0 0 340px;
+  overflow-y: auto;
+  background: var(--bs-body-bg);
+  border-left: 1px solid var(--bs-border-color);
+}
+
+@media (max-width: 768px) {
+  .vts-split { flex-direction: column; min-height: 0; }
+  .vts-map { min-height: 55vh; }
+  .vts-side {
+    width: auto;
+    flex: 1 1 auto;
+    max-height: 45vh;
+    border-left: 0;
+    border-top: 1px solid var(--bs-border-color);
+  }
+}
+
+/* ---- Vehicle list items -------------------------------------------------- */
+.vehicle-item { cursor: pointer; border: 0; border-bottom: 1px solid var(--bs-border-color); }
+.vehicle-item:hover { background: var(--bs-tertiary-bg); }
+.vehicle-item.active { background: var(--bs-primary-bg-subtle); }
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .75rem;
+  font-weight: 600;
+}
+.status-badge::before {
+  content: "";
+  width: .6rem;
+  height: .6rem;
+  border-radius: 50%;
+  background: var(--vts-offline);
+}
+.status-badge.is-live::before { background: var(--vts-live); }
+.status-badge.is-stale::before { background: var(--vts-stale); }
+.status-badge.is-offline::before { background: var(--vts-offline); }
+
+/* ---- Map markers (div icons, no external images) ------------------------- */
+.vts-marker {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .35);
+  background: var(--vts-offline);
+}
+.vts-marker.is-live { background: var(--vts-live); }
+.vts-marker.is-stale { background: var(--vts-stale); }
+.vts-marker.is-offline { background: var(--vts-offline); }
+
+.vts-marker.is-live::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 2px solid var(--vts-live);
+  animation: vts-pulse 1.8s ease-out infinite;
+}
+@keyframes vts-pulse {
+  0%   { transform: scale(.6); opacity: .8; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vts-marker.is-live::after { animation: none; }
+}
+
+.vts-label {
+  background: rgba(33, 37, 41, .85);
+  color: #fff;
+  border-radius: .25rem;
+  padding: 1px 6px;
+  font-size: .7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 0;
+  box-shadow: none;
+}
+.vts-label::before { display: none; } /* hide Leaflet tooltip arrow */
+
+/* ---- Tracker ------------------------------------------------------------- */
+.tracker-power {
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+}
+.tracker-metric { font-variant-numeric: tabular-nums; }
+
+.pulse-live { position: relative; }
+.pulse-live::after {
+  content: "";
+  position: absolute;
+  top: .35rem; right: .35rem;
+  width: .6rem; height: .6rem;
+  border-radius: 50%;
+  background: var(--vts-live);
+  box-shadow: 0 0 0 0 rgba(25, 135, 84, .6);
+  animation: vts-beacon 1.5s infinite;
+}
+@keyframes vts-beacon {
+  0%   { box-shadow: 0 0 0 0 rgba(25, 135, 84, .6); }
+  70%  { box-shadow: 0 0 0 .6rem rgba(25, 135, 84, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pulse-live::after { animation: none; }
+}
+
+/* ---- Trip playback ------------------------------------------------------- */
+.playback-controls { gap: .5rem; }
+#playback-range { flex: 1 1 auto; }

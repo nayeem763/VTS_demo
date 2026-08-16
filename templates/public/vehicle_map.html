@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Live Map · CU-VTS{% endblock %}
+{% block nav_public %}active{% endblock %}
+{% block main_class %}d-flex flex-column p-0{% endblock %}
+
+{% block content %}
+<div class="vts-split">
+  <div id="map" class="vts-map"
+       data-endpoint="{% url 'api:vehicle-latest-locations' %}"
+       data-poll="8000"
+       data-center-lat="22.4716" data-center-lng="91.7876" data-zoom="14"></div>
+  <aside class="vts-side">
+    <div class="p-3 border-bottom">
+      <h1 class="h6 mb-1">Live vehicles</h1>
+      <div id="map-status" class="small text-muted">Loading…</div>
+    </div>
+    <div id="vehicle-list">
+      <div class="p-4 text-center text-muted small">Loading…</div>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+
+{% block body_js %}
+<script src="{% static 'vendor/leaflet/leaflet.js' %}"></script>
+<script src="{% static 'js/vts-common.js' %}"></script>
+<script src="{% static 'js/public-map.js' %}"></script>
+{% endblock %}

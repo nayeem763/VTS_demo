@@ -1,0 +1,40 @@
+# Render Blueprint for CU-VTS. Deploy by pointing Render at this repo
+# (New + → Blueprint). Everything below provisions on Render's FREE tier.
+#
+# The database is NOT declared here: it lives on Supabase's free Postgres tier.
+# After the first deploy, set DATABASE_URL (Supabase session-mode pooler) in the
+# service's Environment settings. RENDER_EXTERNAL_HOSTNAME is injected by Render
+# and auto-added to ALLOWED_HOSTS / CSRF_TRUSTED_ORIGINS by production settings.
+
+services:
+  - type: web
+    name: cu-vts
+    runtime: python
+    plan: free
+    region: singapore          # closest free region to Asia/Dhaka
+    branch: main
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --worker-class gthread --timeout 60 --graceful-timeout 30 --access-logfile - --error-logfile -"
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.1
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PIP_DISABLE_PIP_VERSION_CHECK
+        value: "1"
+      # Auto-generated 50+ char secret; never printed.
+      - key: SECRET_KEY
+        generateValue: true
+      # Set these in the Render dashboard after the first deploy:
+      - key: DATABASE_URL          # Supabase session-mode pooler URL (port 5432)
+        sync: false
+      - key: ALLOWED_HOSTS         # optional extra hostnames (custom domains)
+        sync: false
+      - key: ADMIN_URL_PREFIX      # obscure the admin path, e.g. "control-panel-9f2/"
+        sync: false
+      - key: SENTRY_DSN            # optional error reporting
+        sync: false

@@ -1,0 +1,17 @@
+# Normalise line endings across platforms.
+* text=auto eol=lf
+
+# Shell scripts and the build script must keep LF endings to run on Render (Linux).
+*.sh text eol=lf
+
+# Binary assets — never diff or convert.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+
+# Keep vendored front-end libraries out of language stats and diffs.
+static/vendor/** linguist-vendored

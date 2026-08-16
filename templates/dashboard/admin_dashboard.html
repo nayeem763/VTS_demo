@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Dashboard · CU-VTS{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+{% block main_class %}d-flex flex-column p-0{% endblock %}
+
+{% block content %}
+<div class="vts-split">
+  <div id="map" class="vts-map"
+       data-endpoint="{% url 'api:vehicle-latest-locations' %}"
+       data-poll="6000"
+       data-center-lat="22.4716" data-center-lng="91.7876" data-zoom="14"></div>
+  <aside class="vts-side">
+    <div class="p-3 border-bottom">
+      <div class="d-flex justify-content-between align-items-center">
+        <h1 class="h6 mb-0">Fleet monitor</h1>
+        <a href="{% url 'admin:index' %}" class="btn btn-sm btn-outline-secondary">Manage</a>
+      </div>
+      <div id="map-status" class="small text-muted mt-1">Loading…</div>
+      <label for="focus-select" class="visually-hidden">Focus a vehicle</label>
+      <select id="focus-select" class="form-select form-select-sm mt-2">
+        <option value="">Focus a vehicle…</option>
+      </select>
+    </div>
+    <div id="vehicle-list">
+      <div class="p-4 text-center text-muted small">Loading…</div>
+    </div>
+    <div class="p-3 border-top small text-muted">
+      Manage vehicles, drivers, and assignments from the
+      <a href="{% url 'admin:index' %}">admin console</a>.
+    </div>
+  </aside>
+</div>
+{% endblock %}
+
+{% block body_js %}
+<script src="{% static 'vendor/leaflet/leaflet.js' %}"></script>
+<script src="{% static 'js/vts-common.js' %}"></script>
+<script src="{% static 'js/admin-map.js' %}"></script>
+{% endblock %}
