@@ -3,18 +3,249 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="referrer" content="same-origin">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>{% block title %}CU-VTS{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
   <link rel="stylesheet" href="{% static 'vendor/leaflet/leaflet.css' %}">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <script src="{% static 'js/thema.js' %}"></script>
+
+  {# ===== UI theme layer (visual only: colors, spacing, shadows). Loads after app.css so it wins. ===== #}
+  <style>
+    :root {
+      --vts-brand: #0f766e;
+      --vts-brand-deep: #0b4f4a;
+      --vts-brand-rgb: 15, 118, 110;
+      --vts-accent: #f5a524;
+      --vts-nav-h: 60px;
+
+      /* Align Bootstrap's primary with the brand so every page matches */
+      --bs-primary: #0f766e;
+      --bs-primary-rgb: 15, 118, 110;
+      --bs-link-color: #0f766e;
+      --bs-link-color-rgb: 15, 118, 110;
+      --bs-link-hover-color: #0b4f4a;
+      --bs-link-hover-color-rgb: 11, 79, 74;
+      --bs-border-radius: .6rem;
+      --bs-body-font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Bengali", Helvetica, Arial, sans-serif;
+    }
+    [data-bs-theme="dark"] {
+      --vts-brand: #2dd4bf;
+      --vts-brand-deep: #0a3d39;
+      --vts-brand-rgb: 45, 212, 191;
+      --bs-link-color: #5eead4;
+      --bs-link-color-rgb: 94, 234, 212;
+      --bs-link-hover-color: #99f6e4;
+      --bs-link-hover-color-rgb: 153, 246, 228;
+    }
+
+    body { -webkit-font-smoothing: antialiased; }
+
+    /* Buttons that use Bootstrap's primary */
+    .btn-primary {
+      --bs-btn-bg: #0f766e;
+      --bs-btn-border-color: #0f766e;
+      --bs-btn-hover-bg: #0b5f59;
+      --bs-btn-hover-border-color: #0b5f59;
+      --bs-btn-active-bg: #0b4f4a;
+      --bs-btn-active-border-color: #0b4f4a;
+      --bs-btn-disabled-bg: #0f766e;
+      --bs-btn-disabled-border-color: #0f766e;
+      --bs-btn-focus-shadow-rgb: 15, 118, 110;
+    }
+    .btn-outline-primary {
+      --bs-btn-color: #0f766e;
+      --bs-btn-border-color: #0f766e;
+      --bs-btn-hover-bg: #0f766e;
+      --bs-btn-hover-border-color: #0f766e;
+      --bs-btn-active-bg: #0b4f4a;
+      --bs-btn-active-border-color: #0b4f4a;
+      --bs-btn-focus-shadow-rgb: 15, 118, 110;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: #0f766e;
+      box-shadow: 0 0 0 .2rem rgba(15, 118, 110, .18);
+    }
+
+    /* ---------- Navbar ---------- */
+    .vts-nav {
+      min-height: var(--vts-nav-h);
+      padding-block: .4rem;
+      background:
+        radial-gradient(90% 220% at 100% 0%, rgba(245, 165, 36, .18) 0%, transparent 55%),
+        linear-gradient(135deg, var(--vts-brand-deep), #0f766e);
+      border-bottom: 1px solid rgba(255, 255, 255, .08);
+      box-shadow: 0 4px 18px rgba(11, 79, 74, .28);
+    }
+    [data-bs-theme="dark"] .vts-nav {
+      background:
+        radial-gradient(90% 220% at 100% 0%, rgba(245, 165, 36, .10) 0%, transparent 55%),
+        linear-gradient(135deg, #082b28, #0b4f4a);
+    }
+
+    /* Brand / logo (left-aligned mark + two-line wordmark) */
+    .vts-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: .7rem;
+      padding: 0;
+      margin-right: 1.25rem;
+      color: #fff;
+      text-decoration: none;
+    }
+    .vts-brand:hover, .vts-brand:focus { color: #fff; }
+    .vts-logo {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      flex: none;
+      color: var(--vts-brand-deep);
+      background: linear-gradient(145deg, #ffd27a, var(--vts-accent));
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, .25), inset 0 1px 0 rgba(255, 255, 255, .6);
+    }
+    .vts-logo svg { width: 24px; height: 24px; }
+    .vts-brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+    .vts-brand-name { font-size: 1.1rem; font-weight: 700; letter-spacing: .02em; }
+    .vts-brand-sub  { font-size: .68rem; font-weight: 400; color: rgba(255, 255, 255, .72); }
+
+    /* Links */
+    .vts-nav .nav-link {
+      padding: .45rem .9rem;
+      font-size: .92rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, .82);
+      border-radius: 999px;
+      transition: background-color .15s, color .15s;
+    }
+    .vts-nav .nav-link:hover,
+    .vts-nav .nav-link:focus-visible {
+      color: #fff;
+      background: rgba(255, 255, 255, .12);
+    }
+    .vts-nav .nav-link.active {
+      color: #fff;
+      background: rgba(255, 255, 255, .2);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22);
+    }
+    .vts-nav .navbar-nav + .navbar-nav { gap: .35rem; }
+
+    /* Auth links as buttons */
+    .vts-nav .nav-link.vts-btn-ghost {
+      border: 1px solid rgba(255, 255, 255, .4);
+    }
+    .vts-nav .nav-link.vts-btn-solid {
+      color: var(--vts-brand-deep);
+      font-weight: 600;
+      background: #fff;
+    }
+    .vts-nav .nav-link.vts-btn-solid:hover {
+      color: var(--vts-brand-deep);
+      background: #ffe9bf;
+    }
+
+    /* Theme toggle */
+    #theme-toggle {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      border-color: rgba(255, 255, 255, .4);
+    }
+
+    /* User chip */
+    .vts-user {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .2rem .75rem .2rem .25rem;
+      color: #fff;
+      background: rgba(255, 255, 255, .12);
+      border-radius: 999px;
+    }
+    .vts-avatar {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      font-size: .8rem;
+      font-weight: 700;
+      color: var(--vts-brand-deep);
+      background: var(--vts-accent);
+      border-radius: 50%;
+    }
+    .vts-user .navbar-text { color: #fff !important; padding: 0; }
+
+    .vts-nav .btn-outline-light { border-radius: 999px; }
+    .vts-nav .navbar-toggler {
+      border-color: rgba(255, 255, 255, .4);
+      padding: .3rem .5rem;
+    }
+    .vts-nav .navbar-toggler:focus { box-shadow: 0 0 0 .2rem rgba(255, 255, 255, .25); }
+
+    @media (max-width: 991.98px) {
+      .vts-nav .navbar-collapse {
+        margin-top: .6rem;
+        padding: .6rem 0 .3rem;
+        border-top: 1px solid rgba(255, 255, 255, .15);
+      }
+      .vts-nav .navbar-nav { gap: .2rem; }
+      .vts-nav .navbar-nav + .navbar-nav { margin-top: .4rem; }
+    }
+
+    /* ---------- Flash messages ---------- */
+    .alert {
+      border: 0;
+      border-left: 4px solid currentColor;
+      border-radius: .6rem;
+      box-shadow: 0 2px 10px rgba(18, 48, 59, .08);
+    }
+
+    /* ---------- Footer ---------- */
+    .vts-footer {
+      background: var(--bs-body-bg);
+      border-top: 1px solid var(--bs-border-color) !important;
+    }
+    .vts-footer a { text-decoration: none; font-weight: 500; }
+    .vts-footer a:hover { text-decoration: underline; }
+    .vts-footer .vts-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      margin-right: .3rem;
+      vertical-align: middle;
+      background: #22c55e;
+      border-radius: 50%;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .vts-nav .nav-link { transition: none; }
+    }
+  </style>
+
   {% block extra_head %}{% endblock %}
 </head>
 <body class="d-flex flex-column min-vh-100 bg-body-tertiary">
-  <nav class="navbar navbar-expand-lg bg-primary" data-bs-theme="dark">
+  <nav class="navbar navbar-expand-lg vts-nav" data-bs-theme="dark">
     <div class="container-fluid">
-      <a class="navbar-brand fw-semibold" href="{% url 'web:public_map' %}">
-        <span aria-hidden="true">🚌</span> CU-VTS
+      <a class="navbar-brand vts-brand" href="{% url 'web:public_map' %}">
+        <span class="vts-logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="3" width="16" height="14" rx="3"/>
+            <path d="M4 11h16"/>
+            <circle cx="8.5" cy="14" r=".6" fill="currentColor"/>
+            <circle cx="15.5" cy="14" r=".6" fill="currentColor"/>
+            <path d="M7 17v3M17 17v3"/>
+          </svg>
+        </span>
+        <span class="vts-brand-text">
+          <span class="vts-brand-name">CU-VTS</span>
+          <span class="vts-brand-sub d-none d-sm-inline">Vehicle Tracking System</span>
+        </span>
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
               data-bs-target="#mainNav" aria-controls="mainNav"
@@ -39,12 +270,22 @@
               <a class="nav-link {% block nav_tracker %}{% endblock %}" href="{% url 'web:tracker' %}">My Tracker</a>
             </li>
           {% endif %}
+
         </ul>
-        <ul class="navbar-nav mb-2 mb-lg-0">
+          <ul class="navbar-nav mb-2 mb-lg-0 align-items-lg-center">
+          <li class="nav-item d-flex align-items-center me-lg-2">
+            <button type="button" id="theme-toggle" class="btn btn-sm btn-outline-light"
+                    aria-label="Toggle light/dark theme">
+              <span id="theme-toggle-icon" aria-hidden="true">🌙</span>
+            </button>
+          </li>
           {% if user.is_authenticated %}
             <li class="nav-item d-flex align-items-center me-lg-2">
-              <span class="navbar-text text-white-50 small">
-                {{ user.get_full_name|default:user.get_username }}
+              <span class="vts-user">
+                <span class="vts-avatar" aria-hidden="true">{{ user.get_username|first|upper }}</span>
+                <span class="navbar-text small">
+                  {{ user.get_full_name|default:user.get_username }}
+                </span>
               </span>
             </li>
             <li class="nav-item">
@@ -55,10 +296,10 @@
             </li>
           {% else %}
             <li class="nav-item">
-              <a class="nav-link" href="{% url 'accounts:driver_login' %}">Driver Login</a>
+              <a class="nav-link vts-btn-ghost" href="{% url 'accounts:driver_login' %}">Driver Login</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="{% url 'accounts:admin_login' %}">Admin Login</a>
+              <a class="nav-link vts-btn-solid" href="{% url 'accounts:admin_login' %}">Admin Login</a>
             </li>
           {% endif %}
         </ul>
@@ -81,9 +322,9 @@
     {% block content %}{% endblock %}
   </main>
 
-  <footer class="border-top py-3 mt-auto bg-body">
+  <footer class="vts-footer border-top py-3 mt-auto bg-body">
     <div class="container-fluid text-center text-muted small">
-      CU Vehicle Tracking System &middot; <a href="{% url 'healthz' %}" class="link-secondary">status</a>
+      CU Vehicle Tracking System &middot; <span class="vts-dot" aria-hidden="true"></span><a href="{% url 'healthz' %}" class="link-secondary">status</a>
     </div>
   </footer>
 

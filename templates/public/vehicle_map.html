@@ -5,21 +5,270 @@
 {% block main_class %}d-flex flex-column p-0{% endblock %}
 
 {% block content %}
+<style>
+  /* ---------- Scoped design tokens (only inside .vts-split) ---------- */
+  .vts-split {
+    --vts-ink: #12303b;
+    --vts-ink-soft: #5b727a;
+    --vts-teal: #0f766e;
+    --vts-teal-deep: #0b4f4a;
+    --vts-mint: #e6f4f1;
+    --vts-paper: #f7faf9;
+    --vts-line: #dde7e5;
+    --vts-live: #f5a524;
+    --vts-radius: 12px;
+  }
+
+  /* ---------- Side panel ---------- */
+  .vts-split .vts-side {
+    background: var(--vts-paper);
+    color: var(--vts-ink);
+    border-left: 1px solid var(--vts-line);
+    box-shadow: -8px 0 24px rgba(18, 48, 59, .06);
+  }
+
+  .vts-head {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    padding: 1rem 1rem .85rem;
+    color: #fff;
+    background:
+      radial-gradient(120% 140% at 100% 0%, rgba(245, 165, 36, .22) 0%, transparent 55%),
+      linear-gradient(135deg, var(--vts-teal-deep), var(--vts-teal));
+  }
+  .vts-head-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+  }
+  .vts-head h1 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: .01em;
+    color: #fff;
+  }
+  .vts-head p {
+    margin: .2rem 0 0;
+    font-size: .78rem;
+    color: rgba(255, 255, 255, .78);
+  }
+
+  /* Live badge */
+  .vts-live {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .22rem .6rem;
+    font-size: .72rem;
+    font-weight: 600;
+    color: #fff;
+    background: rgba(255, 255, 255, .14);
+    border: 1px solid rgba(255, 255, 255, .28);
+    border-radius: 999px;
+    backdrop-filter: blur(4px);
+  }
+  .vts-live-dot {
+    position: relative;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--vts-live);
+  }
+  .vts-live-dot::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid var(--vts-live);
+    opacity: 0;
+    animation: vts-pulse 1.8s ease-out infinite;
+  }
+  @keyframes vts-pulse {
+    0%   { transform: scale(.5); opacity: .9; }
+    100% { transform: scale(1.6); opacity: 0; }
+  }
+
+  /* Status line (text is filled by public-map.js) */
+  .vts-head #map-status {
+    display: inline-block;
+    margin-top: .65rem;
+    padding: .18rem .6rem;
+    font-size: .74rem;
+    color: var(--vts-ink) !important;
+    background: #fff;
+    border-radius: 999px;
+  }
+
+  /* Search */
+  .vts-search {
+    position: relative;
+    padding: .75rem 1rem;
+    background: var(--vts-paper);
+    border-bottom: 1px solid var(--vts-line);
+  }
+  .vts-search svg {
+    position: absolute;
+    left: 1.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: var(--vts-ink-soft);
+    pointer-events: none;
+  }
+  .vts-search input {
+    width: 100%;
+    padding: .55rem .9rem .55rem 2.2rem;
+    font-size: .88rem;
+    color: var(--vts-ink);
+    background: #fff;
+    border: 1px solid var(--vts-line);
+    border-radius: 10px;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .vts-search input::placeholder { color: #8aa0a7; }
+  .vts-search input:focus {
+    border-color: var(--vts-teal);
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, .16);
+  }
+
+  /* Vehicle list items (markup comes from JS, so styled generically) */
+  .vts-split #vehicle-list > *:not(.text-center) {
+    padding: .85rem 1rem;
+    background: #fff;
+    border-bottom: 1px solid var(--vts-line);
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    transition: background-color .15s, border-left-color .15s, transform .15s;
+  }
+  .vts-split #vehicle-list > *:not(.text-center):hover {
+    background: var(--vts-mint);
+    border-left-color: var(--vts-teal);
+  }
+  .vts-split #vehicle-list > *:not(.text-center):active {
+    transform: scale(.995);
+  }
+  .vts-split #vehicle-list > *:not(.text-center):focus-visible {
+    outline: 2px solid var(--vts-teal);
+    outline-offset: -2px;
+  }
+  .vts-split #vehicle-list .badge {
+    border-radius: 999px;
+    font-weight: 600;
+  }
+
+  .vts-empty {
+    display: none;
+    padding: 2rem 1rem;
+    text-align: center;
+    font-size: .85rem;
+    color: var(--vts-ink-soft);
+  }
+
+  /* ---------- Map ---------- */
+  .vts-split .vts-map {
+    background: #dfeeee;
+  }
+  .vts-split .leaflet-control-zoom {
+    border: 0 !important;
+    border-radius: var(--vts-radius);
+    overflow: hidden;
+    box-shadow: 0 6px 18px rgba(18, 48, 59, .22);
+  }
+  .vts-split .leaflet-control-zoom a {
+    width: 36px;
+    height: 36px;
+    line-height: 36px;
+    color: var(--vts-teal-deep);
+    background: #fff;
+    border-bottom: 1px solid var(--vts-line);
+    transition: background-color .15s, color .15s;
+  }
+  .vts-split .leaflet-control-zoom a:hover {
+    color: #fff;
+    background: var(--vts-teal);
+  }
+  .vts-split .leaflet-popup-content-wrapper {
+    color: var(--vts-ink);
+    border-radius: var(--vts-radius);
+    box-shadow: 0 10px 28px rgba(18, 48, 59, .28);
+  }
+  .vts-split .leaflet-popup-content {
+    margin: .8rem 1rem;
+    line-height: 1.45;
+  }
+  .vts-split .leaflet-popup-tip {
+    box-shadow: 0 10px 28px rgba(18, 48, 59, .2);
+  }
+  .vts-split .leaflet-control-attribution {
+    font-size: 10px;
+    background: rgba(255, 255, 255, .8);
+    border-radius: 8px 0 0 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .vts-live-dot::after { animation: none; }
+    .vts-split #vehicle-list > * { transition: none; }
+  }
+</style>
+
 <div class="vts-split">
   <div id="map" class="vts-map"
        data-endpoint="{% url 'api:vehicle-latest-locations' %}"
        data-poll="8000"
        data-center-lat="22.4716" data-center-lng="91.7876" data-zoom="14"></div>
   <aside class="vts-side">
-    <div class="p-3 border-bottom">
-      <h1 class="h6 mb-1">Live vehicles</h1>
+    <div class="vts-head">
+      <div class="vts-head-top">
+        <h1>Live vehicles</h1>
+        <span class="vts-live"><span class="vts-live-dot"></span>Live</span>
+      </div>
+      <p>See where each campus vehicle is right now.</p>
       <div id="map-status" class="small text-muted">Loading…</div>
     </div>
+
+    <div class="vts-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="vts-filter" type="search" placeholder="Search by name or plate" autocomplete="off" aria-label="Search vehicles">
+    </div>
+
     <div id="vehicle-list">
       <div class="p-4 text-center text-muted small">Loading…</div>
     </div>
+    <div id="vts-empty" class="vts-empty">No vehicle matches your search.</div>
   </aside>
 </div>
+
+{# Optional: client-side list filter. Reads the list only; never changes data or JS files. #}
+<script>
+(function () {
+  var input = document.getElementById('vts-filter');
+  var list  = document.getElementById('vehicle-list');
+  var empty = document.getElementById('vts-empty');
+  if (!input || !list) return;
+
+  function apply() {
+    var q = input.value.trim().toLowerCase();
+    var shown = 0, total = 0;
+    Array.prototype.forEach.call(list.children, function (el) {
+      if (el.classList.contains('text-center')) return;   // skip loading/empty placeholder
+      total++;
+      var hit = !q || el.textContent.toLowerCase().indexOf(q) !== -1;
+      el.style.display = hit ? '' : 'none';
+      if (hit) shown++;
+    });
+    empty.style.display = (q && total && !shown) ? 'block' : 'none';
+  }
+
+  input.addEventListener('input', apply);
+  // Re-apply after each poll re-renders the list.
+  new MutationObserver(apply).observe(list, { childList: true });
+})();
+</script>
 {% endblock %}
 
 {% block body_js %}
