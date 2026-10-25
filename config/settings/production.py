@@ -50,9 +50,8 @@ X_FRAME_OPTIONS = "DENY"
 # ---------------------------------------------------------------------------
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+    "staticfiles": {"BACKEND": "config.storage.NoSourceMapManifestStorage"},
 }
-
 # ---------------------------------------------------------------------------
 # Optional error monitoring (Sentry) — enabled only if SENTRY_DSN is set.
 # ---------------------------------------------------------------------------
