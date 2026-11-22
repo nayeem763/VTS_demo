@@ -15,6 +15,7 @@ def test_public_map_renders_for_anonymous(client):
     resp = client.get(reverse("web:public_map"))
     assert resp.status_code == 200
     assert "public/vehicle_map.html" in [t.name for t in resp.templates]
+    assert resp.context["routing_service_url"].startswith("https://")
 
 
 # ---------------------------------------------------------------------------
@@ -37,6 +38,9 @@ def test_dashboard_ok_for_admin(client, admin_user, vehicle):
     resp = client.get(reverse("web:admin_dashboard"))
     assert resp.status_code == 200
     assert list(resp.context["vehicles"]) == [vehicle]
+    assert resp.context["routing_service_url"].startswith("https://")
+    assert "csrftoken" in resp.cookies
+    assert b'id="fixed-route-form"' in resp.content
 
 
 # ---------------------------------------------------------------------------

@@ -5,36 +5,398 @@
 {% block main_class %}d-flex flex-column p-0{% endblock %}
 
 {% block content %}
-<div class="vts-split">
+<div class="vts-split" id="dashboard-split">
   <div id="map" class="vts-map"
        data-endpoint="{% url 'api:vehicle-latest-locations' %}"
+       data-routes-endpoint="{% url 'api:bus-route-list' %}"
        data-poll="6000"
+       data-routing-url="{{ routing_service_url }}"
        data-center-lat="22.4716" data-center-lng="91.7876" data-zoom="14"></div>
-  <aside class="vts-side">
-    <div class="p-3 border-bottom">
-      <div class="d-flex justify-content-between align-items-center">
-        <h1 class="h6 mb-0">Fleet monitor</h1>
-        <a href="{% url 'admin:index' %}" class="btn btn-sm btn-outline-secondary">Manage</a>
+
+  <div class="vts-side-shell">
+    <button type="button" class="vts-collapse-tab" data-side-toggle
+            aria-expanded="true" aria-controls="dashboard-side-panel"
+            aria-label="Collapse side panel" title="Collapse side panel">
+      <svg class="vts-tab-outline" width="11" height="80" viewBox="0 0 11 80" fill="none" aria-hidden="true">
+        <path d="M10.5 0 C10.5 5.5 7.5 8 5 8 C2.2 8 0.5 9.8 0.5 13 L0.5 67 C0.5 70.2 2.2 72 5 72 C7.5 72 10.5 74.5 10.5 80" stroke="currentColor" stroke-width="1"/>
+      </svg>
+      <svg class="vts-tab-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="m9 18 6-6-6-6"/>
+      </svg>
+    </button>
+
+    <aside class="vts-side" id="dashboard-side-panel" aria-label="Fleet operations">
+      <nav class="vts-side-rail" aria-label="Collapsed fleet shortcuts">
+        <button type="button" class="vts-rail-btn vts-rail-btn--expand" data-side-toggle
+                aria-label="Expand side panel" title="Expand panel">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m15 18-6-6 6-6"/>
+          </svg>
+        </button>
+        <span class="vts-rail-divider" aria-hidden="true"></span>
+        <button type="button" class="vts-rail-btn is-active" data-rail-open="fleet"
+                aria-label="Open live fleet" title="Live fleet">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="4" y="4" width="16" height="12" rx="2.5"/>
+            <path d="M4 11h16M7 16v2.5M17 16v2.5"/>
+          </svg>
+          <span class="vts-rail-label">Fleet</span>
+        </button>
+        <button type="button" class="vts-rail-btn" data-rail-open="routes"
+                aria-label="Open fixed routes" title="Fixed routes">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="6" cy="18" r="2.5"/>
+            <circle cx="18" cy="6" r="2.5"/>
+            <path d="M8.5 18H14a4 4 0 0 0 0-8h-4a4 4 0 0 1 0-8h5.5"/>
+          </svg>
+          <span class="vts-rail-label">Routes</span>
+        </button>
+        <button type="button" class="vts-rail-btn" data-rail-open="planner"
+                aria-label="Open road route planner" title="Plan a road route">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+          </svg>
+          <span class="vts-rail-label">Plan</span>
+        </button>
+        <button type="button" class="vts-rail-btn" data-rail-open="focus"
+                aria-label="Focus a vehicle" title="Focus a vehicle">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="7"/>
+            <circle cx="12" cy="12" r="2"/>
+            <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+          </svg>
+          <span class="vts-rail-label">Focus</span>
+        </button>
+
+        <div class="vts-rail-bottom">
+          <span class="vts-rail-divider" aria-hidden="true"></span>
+          <button type="button" class="vts-rail-btn" data-rail-maximize
+                  aria-label="Maximize dashboard to full screen" title="Maximize dashboard">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+            </svg>
+          </button>
+          <a href="{% url 'web:fleet_record_pdf' %}" class="vts-rail-btn"
+             aria-label="Download Fleet PDF" title="Fleet PDF">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/>
+              <path d="M14 3v5h5M12 12v5M9.5 14.5 12 17l2.5-2.5"/>
+            </svg>
+          </a>
+          <a href="{% url 'admin:index' %}" class="vts-rail-btn"
+             aria-label="Manage admin console" title="Manage">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.85 1 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
+            </svg>
+          </a>
+        </div>
+      </nav>
+
+      <header class="vts-panel-header vts-panel-header--tabbed">
+      <div class="vts-panel-header__inner">
+        <div class="vts-panel-top">
+          <div class="vts-panel-heading-group">
+            <p class="vts-panel-eyebrow">Operations centre</p>
+            <h1 class="vts-panel-title">Fleet monitor</h1>
+          </div>
+          <p class="vts-panel-copy">Monitor active vehicles, plan a route, or manage the fixed route network.</p>
+
+          <ul class="nav vts-panel-tabs" role="tablist" aria-label="Fleet workspace">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="fleet-tab" data-bs-toggle="tab" data-bs-target="#fleet-panel" type="button" role="tab" aria-controls="fleet-panel" aria-selected="true">
+                <svg class="vts-ui-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="4" y="4" width="16" height="12" rx="2.5"/>
+                  <path d="M4 11h16M7 16v2.5M17 16v2.5"/>
+                </svg>
+                <span>Live fleet</span>
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="routes-tab" data-bs-toggle="tab" data-bs-target="#routes-panel" type="button" role="tab" aria-controls="routes-panel" aria-selected="false">
+                <svg class="vts-ui-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="6" cy="18" r="2.5"/>
+                  <circle cx="18" cy="6" r="2.5"/>
+                  <path d="M8.5 18H14a4 4 0 0 0 0-8h-4a4 4 0 0 1 0-8h5.5"/>
+                </svg>
+                <span>Fixed routes</span>
+              </button>
+            </li>
+          </ul>
+
+          <div class="vts-panel-toolbar" aria-label="Fleet actions">
+            <div class="vts-panel-actions">
+              <a href="{% url 'web:fleet_record_pdf' %}" class="btn btn-sm btn-primary">
+                <svg class="vts-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/>
+                  <path d="M14 3v5h5M12 12v5M9.5 14.5 12 17l2.5-2.5"/>
+                </svg>
+                <span>Fleet PDF</span>
+              </a>
+              <a href="{% url 'admin:index' %}" class="btn btn-sm btn-outline-secondary">
+                <svg class="vts-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.85 1 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
+                </svg>
+                <span>Manage</span>
+              </a>
+            </div>
+            <button type="button" id="dashboard-expand-toggle" class="btn btn-sm btn-outline-secondary liquid-glass-btn vts-expand-toggle"
+                    aria-pressed="false" aria-label="Maximize dashboard to full screen" title="Maximize dashboard">
+              <svg class="vts-btn-icon vts-icon-expand" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+              </svg>
+              <svg class="vts-btn-icon vts-icon-split" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="16" rx="2.5"/>
+                <path d="M12 4v16"/>
+              </svg>
+              <span class="vts-expand-label">Maximize</span>
+              <span class="vts-collapse-label">Show map</span>
+            </button>
+          </div>
+        </div>
       </div>
-      <div id="map-status" class="small text-muted mt-1">Loading…</div>
-      <label for="focus-select" class="visually-hidden">Focus a vehicle</label>
-      <select id="focus-select" class="form-select form-select-sm mt-2">
-        <option value="">Focus a vehicle…</option>
-      </select>
+    </header>
+
+    <div class="tab-content vts-tab-content">
+      <section class="tab-pane fade show active vts-tab-pane" id="fleet-panel" role="tabpanel" aria-labelledby="fleet-tab" tabindex="0">
+        <div class="vts-dashboard-body">
+          <div class="vts-kpi-strip" aria-label="Fleet summary">
+            <div class="vts-kpi-card">
+              <div class="vts-kpi-top">
+                <span class="vts-kpi-label">Active fleet</span>
+                <span class="vts-kpi-icon vts-kpi-icon--total" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4" y="3.5" width="16" height="13.5" rx="3"/>
+                    <path d="M4 11h16M7.5 17v2.5M16.5 17v2.5"/>
+                  </svg>
+                </span>
+              </div>
+              <div id="kpi-total" class="vts-kpi-value">0</div>
+              <div class="vts-kpi-sub">Registered active vehicles</div>
+            </div>
+            <div class="vts-kpi-card">
+              <div class="vts-kpi-top">
+                <span class="vts-kpi-label">Live now</span>
+                <span class="vts-kpi-icon vts-kpi-icon--live" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M7.5 16.5a6.4 6.4 0 0 1 0-9M16.5 7.5a6.4 6.4 0 0 1 0 9"/>
+                  </svg>
+                </span>
+              </div>
+              <div id="kpi-live" class="vts-kpi-value">0</div>
+              <div class="vts-kpi-sub">Fresh GPS signal</div>
+            </div>
+            <div class="vts-kpi-card">
+              <div class="vts-kpi-top">
+                <span class="vts-kpi-label">Delayed</span>
+                <span class="vts-kpi-icon vts-kpi-icon--stale" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="8.5"/>
+                    <path d="M12 7.5V12l3 2"/>
+                  </svg>
+                </span>
+              </div>
+              <div id="kpi-stale" class="vts-kpi-value">0</div>
+              <div class="vts-kpi-sub">Stale telemetry signal</div>
+            </div>
+            <div class="vts-kpi-card">
+              <div class="vts-kpi-top">
+                <span class="vts-kpi-label">Offline</span>
+                <span class="vts-kpi-icon vts-kpi-icon--offline" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="8.5"/>
+                    <path d="M8.5 12h7"/>
+                  </svg>
+                </span>
+              </div>
+              <div id="kpi-offline" class="vts-kpi-value">0</div>
+              <div class="vts-kpi-sub">No recent location</div>
+            </div>
+          </div>
+
+          <div class="vts-ops-grid">
+            <div class="vts-ops-primary">
+              <div class="vts-roster-card">
+                <div class="vts-roster-toolbar">
+                  <div class="vts-roster-heading">
+                    <h2>Fleet roster</h2>
+                    <div id="map-status" class="vts-status-bar vts-status-bar--flush" role="status" aria-live="polite">Loading fleet…</div>
+                  </div>
+                  <div class="vts-roster-filters">
+                    <div class="vts-status-pills" role="group" aria-label="Filter fleet by status">
+                      <button type="button" class="vts-filter-pill active" data-status-filter="all">All</button>
+                      <button type="button" class="vts-filter-pill" data-status-filter="live">Live</button>
+                      <button type="button" class="vts-filter-pill" data-status-filter="stale">Stale</button>
+                      <button type="button" class="vts-filter-pill" data-status-filter="offline">Offline</button>
+                    </div>
+                    <div class="vts-roster-search">
+                      <svg class="vts-roster-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path d="m20 20-3.5-3.5"/>
+                      </svg>
+                      <label class="visually-hidden" for="dashboard-filter">Filter fleet</label>
+                      <input id="dashboard-filter" class="form-control form-control-sm" type="search" placeholder="Search bus, route, driver…" autocomplete="off">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="vts-roster-head" aria-hidden="true">
+                  <div class="vts-roster-head__main">
+                    <span>Vehicle &amp; route</span>
+                    <span>Assigned driver</span>
+                  </div>
+                  <div class="vts-roster-head__meta">
+                    <span>Status</span>
+                    <span class="text-end">Telemetry</span>
+                  </div>
+                </div>
+
+                <div class="vts-side-scroll vts-side-scroll--bordered">
+                  <div id="vehicle-list" aria-live="polite">
+                    <div class="vts-list-placeholder">Loading vehicles…</div>
+                  </div>
+                  <div id="dashboard-filter-empty" class="vts-empty">
+                    <svg class="vts-empty-inline-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <circle cx="11" cy="11" r="7"/>
+                      <path d="m20 20-3.5-3.5"/>
+                      <path d="M8.5 11h5"/>
+                    </svg>
+                    <p class="mb-0">No vehicles match the active filter.</p>
+                  </div>
+                </div>
+
+                <div class="vts-panel-note">
+                  Manage vehicle records, drivers, and assignments in the <a href="{% url 'admin:index' %}">admin console</a>.
+                </div>
+              </div>
+            </div>
+
+            <div class="vts-ops-rail">
+              <div class="vts-controls vts-dashboard-controls">
+                <div class="vts-focus-card">
+                  <div class="vts-rail-title">Quick vehicle focus</div>
+                  <p class="vts-rail-copy">Jump directly to a vehicle on the live map.</p>
+                  <div class="vts-focus-wrap">
+                    <label for="focus-select" class="form-label mb-1">Focus a vehicle</label>
+                    <select id="focus-select" class="form-select form-select-sm">
+                      <option value="">Choose a vehicle on the map…</option>
+                    </select>
+                  </div>
+                </div>
+
+                <details class="vts-route-planner" id="route-planner">
+                  <summary>
+                    <span class="vts-summary-label">
+                      <svg class="vts-ui-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="6" cy="19" r="2.5"/>
+                        <circle cx="18" cy="5" r="2.5"/>
+                        <path d="M8.5 19H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/>
+                      </svg>
+                      <span>Plan a road route</span>
+                    </span>
+                    <svg class="vts-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="m6 9 6 6 6-6"/>
+                    </svg>
+                  </summary>
+                  <div class="vts-route-planner__body">
+                    <p>Enter coordinates as <code>latitude, longitude</code>. The route follows the road network.</p>
+                    <label class="form-label vts-coord-label" for="route-source">
+                      <span class="vts-dot vts-dot--start" aria-hidden="true"></span>Starting point
+                    </label>
+                    <input id="route-source" class="form-control form-control-sm route-coordinate-input" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" list="route-coordinate-options" placeholder="22.470680, 91.794230">
+                    <label class="form-label vts-coord-label mt-2" for="route-destination">
+                      <span class="vts-dot vts-dot--end" aria-hidden="true"></span>Destination
+                    </label>
+                    <input id="route-destination" class="form-control form-control-sm route-coordinate-input" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" list="route-coordinate-options" placeholder="22.471600, 91.787600">
+                    <datalist id="route-coordinate-options">
+                      <option value="22.470680, 91.794230">Chittagong University Railway Station</option>
+                      <option value="22.471600, 91.787600">Chittagong University</option>
+                    </datalist>
+                    <div class="vts-route-actions">
+                      <button id="draw-route" class="btn btn-sm btn-primary" type="button">Show driving route</button>
+                      <button id="clear-route" class="btn btn-sm btn-outline-secondary" type="button">Clear</button>
+                    </div>
+                    <div id="route-status" class="mt-2" role="status" aria-live="polite"></div>
+                  </div>
+                </details>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-pane fade vts-tab-pane vts-tab-pane--scroll" id="routes-panel" role="tabpanel" aria-labelledby="routes-tab" tabindex="0">
+        <div id="route-manager" class="vts-dashboard-body">
+          <div class="route-manager-heading">
+            <div>
+              <h2>Fixed bus routes</h2>
+              <p>Saved routes follow roads through each stop in sequence.</p>
+            </div>
+            <span id="route-count" class="route-count">0 routes</span>
+          </div>
+
+          <div class="route-manager-grid">
+            <div class="route-manager-composer">
+              <form id="fixed-route-form" class="vts-route-form-card">
+                <div class="route-form-title">
+                  <span class="route-form-badge">Route <span id="new-route-number">1</span></span>
+                  <label for="new-route-name" class="visually-hidden">Route name</label>
+                  <input id="new-route-name" class="form-control form-control-sm" type="text" maxlength="120" autocomplete="off" required placeholder="Route name">
+                </div>
+
+                <label class="route-form-label vts-coord-label" for="new-route-start">
+                  <span class="vts-dot vts-dot--start" aria-hidden="true"></span>Start point
+                </label>
+                <input id="new-route-start" class="form-control form-control-sm route-coordinate-input" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" required placeholder="Latitude, longitude · 22.470680, 91.794230">
+                <div class="route-coordinate-help">Use latitude, longitude.</div>
+
+                <div class="route-section-heading">
+                  <span>Stops</span>
+                  <button id="add-route-stop" class="btn btn-sm btn-outline-primary" type="button">
+                    <svg class="vts-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                    <span>Add stop</span>
+                  </button>
+                </div>
+                <div id="new-route-stops" class="route-stop-editors"></div>
+
+                <label class="route-form-label vts-coord-label mt-3" for="new-route-end">
+                  <span class="vts-dot vts-dot--end" aria-hidden="true"></span>End point
+                </label>
+                <input id="new-route-end" class="form-control form-control-sm route-coordinate-input" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" required placeholder="Latitude, longitude · 22.471600, 91.787600">
+
+                <div class="d-grid mt-3">
+                  <button id="save-fixed-route" class="btn btn-primary btn-sm" type="submit">Save route</button>
+                </div>
+                <div id="fixed-route-status" class="small mt-2" role="status" aria-live="polite"></div>
+              </form>
+            </div>
+
+            <div class="route-manager-saved">
+              <div class="vts-saved-routes-card">
+                <div class="route-section-heading route-section-heading--saved">
+                  <span>Saved routes</span>
+                  <span class="text-muted small fw-normal">Toggle visibility on map</span>
+                </div>
+                <div id="fixed-route-list" class="route-list" aria-live="polite">
+                  <div class="vts-list-placeholder">Loading routes…</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
-    <div id="vehicle-list">
-      <div class="p-4 text-center text-muted small">Loading…</div>
-    </div>
-    <div class="p-3 border-top small text-muted">
-      Manage vehicles, drivers, and assignments from the
-      <a href="{% url 'admin:index' %}">admin console</a>.
-    </div>
-  </aside>
+    </aside>
+  </div>
 </div>
 {% endblock %}
 
 {% block body_js %}
 <script src="{% static 'vendor/leaflet/leaflet.js' %}"></script>
-<script src="{% static 'js/vts-common.js' %}"></script>
-<script src="{% static 'js/admin-map.js' %}"></script>
+<script src="{% static 'js/vts-common.js' %}?v=vts-ui-15"></script>
+<script src="{% static 'js/admin-map.js' %}?v=vts-ui-19"></script>
 {% endblock %}
