@@ -11,6 +11,10 @@ app_name = "web"
 urlpatterns = [
     path("", views.PublicMapView.as_view(), name="public_map"),
     path("dashboard/", views.AdminDashboardView.as_view(), name="admin_dashboard"),
+    path(
+        "dashboard/fleet-record.pdf", views.FleetRecordReportView.as_view(), name="fleet_record_pdf"
+    ),
     path("tracker/", views.TrackerView.as_view(), name="tracker"),
     path("trips/", views.TripHistoryView.as_view(), name="trip_history"),
+    path("trips/history.pdf", views.TripHistoryReportView.as_view(), name="trip_history_pdf"),
 ]

@@ -83,6 +83,7 @@ Then visit:
 | `/`                 | Everyone   | Public live map                                 |
 | `/driver-login/`    | Drivers    | Log in → `/tracker/` to broadcast location      |
 | `/admin-login/`     | Admins     | Log in → `/dashboard/` (fleet + live map)       |
+| `/dashboard/fleet-record.pdf` | Admins | One-click full fleet PDF: log entries + analytics |
 | `/trips/`           | Admins     | Historical trip playback                        |
 | `/healthz`          | —          | Liveness probe (returns `ok`)                   |
 | `/django-admin/`    | Superusers | Django admin (path is configurable, see below)  |

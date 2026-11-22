@@ -1,9 +1,15 @@
 from __future__ import annotations
 
 from django.contrib import admin
+from django.core.exceptions import PermissionDenied
+from django.db.models import Count
+from django.http import HttpRequest, HttpResponse
+from django.urls import path
 from django.utils import timezone
 
-from .models import DriverAssignment, Vehicle
+from apps.tracking.reports import build_fleet_record_pdf, fleet_record_filename
+
+from .models import BusRoute, DriverAssignment, RouteStop, Vehicle
 from .services import deactivate_vehicle, end_assignment
 
 
@@ -13,13 +19,93 @@ class VehicleAdmin(admin.ModelAdmin):
     list_filter = ("is_active",)
     search_fields = ("bus_number", "registration_number", "route_label")
     readonly_fields = ("created_at", "updated_at")
-    actions = ("action_deactivate",)
+    actions = ("action_generate_fleet_record", "action_deactivate")
+    change_list_template = "admin/fleet/vehicle/change_list.html"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                "generate-fleet-record/",
+                self.admin_site.admin_view(self.generate_fleet_record_view),
+                name="fleet_vehicle_generate_fleet_report",
+            )
+        ]
+        return custom_urls + urls
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        if not self._can_export_location_data(request):
+            actions.pop("action_generate_fleet_record", None)
+        return actions
+
+    def generate_fleet_record_view(self, request: HttpRequest) -> HttpResponse:
+        """Download a full-fleet record directly from the Vehicle changelist."""
+        allowed = self.has_view_or_change_permission(request)
+        if not allowed or not self._can_export_location_data(request):
+            raise PermissionDenied
+        queryset = self.get_queryset(request)
+        return self._pdf_response(queryset=queryset, generated_by=request.user.get_username())
+
+    @admin.action(description="Generate PDF fleet record for selected vehicles")
+    def action_generate_fleet_record(self, request, queryset) -> HttpResponse:
+        """Download one report scoped to the selected Vehicle rows."""
+        if not self._can_export_location_data(request):
+            raise PermissionDenied
+        return self._pdf_response(queryset=queryset, generated_by=request.user.get_username())
+
+    def _pdf_response(self, *, queryset, generated_by: str) -> HttpResponse:
+        pdf = build_fleet_record_pdf(vehicles=queryset, generated_by=generated_by)
+        response = HttpResponse(pdf, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{fleet_record_filename()}"'
+        response["Content-Length"] = str(len(pdf))
+        response["X-Content-Type-Options"] = "nosniff"
+        response["Cache-Control"] = "private, no-store"
+        return response
+
+    @staticmethod
+    def _can_export_location_data(request: HttpRequest) -> bool:
+        # The report exposes private driver identities and precise coordinates.
+        # Require the same model-level viewing capability as LocationAdmin.
+        return bool(request.user and request.user.has_perm("tracking.view_location"))
 
     @admin.action(description="Deactivate selected vehicles (ends active assignment)")
     def action_deactivate(self, request, queryset) -> None:
         for vehicle in queryset:
             deactivate_vehicle(vehicle)
         self.message_user(request, f"Deactivated {queryset.count()} vehicle(s).")
+
+
+class RouteStopInline(admin.TabularInline):
+    """Maintain a route's ordered stops alongside its endpoints."""
+
+    model = RouteStop
+    extra = 1
+    fields = ("sequence", "name", "longitude", "latitude")
+    ordering = ("sequence",)
+
+
+@admin.register(BusRoute)
+class BusRouteAdmin(admin.ModelAdmin):
+    list_display = ("name", "start_coordinates", "stop_count", "end_coordinates", "updated_at")
+    search_fields = ("name", "stops__name")
+    readonly_fields = ("created_at", "updated_at")
+    inlines = (RouteStopInline,)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(_stop_count=Count("stops"))
+
+    @admin.display(description="Start")
+    def start_coordinates(self, route: BusRoute) -> str:
+        return f"{route.start_longitude}, {route.start_latitude}"
+
+    @admin.display(description="Stops", ordering="_stop_count")
+    def stop_count(self, route: BusRoute) -> int:
+        return route._stop_count
+
+    @admin.display(description="End")
+    def end_coordinates(self, route: BusRoute) -> str:
+        return f"{route.end_longitude}, {route.end_latitude}"
 
 
 @admin.register(DriverAssignment)
