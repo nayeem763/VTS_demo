@@ -36,9 +36,51 @@ def test_latest_locations_public_shape(api_client, open_trip, vehicle, add_point
     assert row["has_signal"] is True
     assert isinstance(row["latitude"], str)
     assert isinstance(row["age_seconds"], int)
+    assert row["trajectory"] == [
+        {
+            "latitude": "23.777100",
+            "longitude": "90.399400",
+            "captured_at": row["captured_at"],
+        }
+    ]
     # Privacy boundary: no driver identity or accuracy on the public view.
     assert "driver_name" not in row
     assert "accuracy_m" not in row
+
+
+def test_live_trajectory_preserves_every_recorded_turn(
+    api_client, open_trip, add_point
+):
+    """Proof that the map receives a path, not just its start and end."""
+    started = timezone.now() - timedelta(minutes=3)
+    add_point(
+        trip=open_trip,
+        captured_at=started,
+        latitude=Decimal("23.777100"),
+        longitude=Decimal("90.399400"),
+    )
+    add_point(
+        trip=open_trip,
+        captured_at=started + timedelta(minutes=1),
+        latitude=Decimal("23.778000"),
+        longitude=Decimal("90.401000"),
+    )
+    add_point(
+        trip=open_trip,
+        captured_at=started + timedelta(minutes=2),
+        latitude=Decimal("23.779200"),
+        longitude=Decimal("90.400200"),
+    )
+
+    response = api_client.get(LIST_URL)
+
+    assert response.status_code == 200
+    route = response.json()["results"][0]["trajectory"]
+    assert [(point["latitude"], point["longitude"]) for point in route] == [
+        ("23.777100", "90.399400"),  # start
+        ("23.778000", "90.401000"),  # turn: must not be omitted
+        ("23.779200", "90.400200"),  # current location
+    ]
 
 
 def test_latest_locations_admin_adds_driver_and_accuracy(
@@ -58,6 +100,7 @@ def test_vehicle_without_fix_reports_no_signal(api_client, vehicle):
     assert row["has_signal"] is False
     assert row["latitude"] is None
     assert row["is_stale"] is True
+    assert row["trajectory"] == []
 
 
 def test_fresh_fix_is_not_stale(api_client, open_trip, add_point):

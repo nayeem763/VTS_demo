@@ -56,7 +56,22 @@ def get_trip_points(
         qs = qs.filter(captured_at__gte=start)
     if end is not None:
         qs = qs.filter(captured_at__lte=end)
-    return qs.order_by("captured_at")
+    # ``id`` makes the order stable even if two fixes have the same device
+    # timestamp.  A stable chronological sequence is essential for drawing a
+    # route through every reported coordinate.
+    return qs.order_by("captured_at", "id")
+
+
+def get_location_trajectory(location: Location | None) -> list[Location]:
+    """Return the complete, ordered trace for a location's trip.
+
+    A location is the current end of a driver's session.  Its trip contains
+    the exact sequence of GPS fixes needed by the live map to preserve turns
+    and detours between the first and latest fixes.
+    """
+    if location is None:
+        return []
+    return list(get_trip_points(trip=location.trip).only("latitude", "longitude", "captured_at"))
 
 
 def get_open_trip_for_vehicle(vehicle: Vehicle) -> Trip | None:

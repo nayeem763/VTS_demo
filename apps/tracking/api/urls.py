@@ -10,6 +10,8 @@ app_name = "api"
 
 urlpatterns = [
     path("locations/", views.LocationCreateView.as_view(), name="location-create"),
+    path("routes/", views.BusRouteListCreateView.as_view(), name="bus-route-list"),
+    path("routes/<int:route_id>/", views.BusRouteDetailView.as_view(), name="bus-route-detail"),
     path(
         "vehicles/latest-locations/",
         views.LatestActiveVehicleLocationsView.as_view(),

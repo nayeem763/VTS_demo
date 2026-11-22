@@ -145,7 +145,12 @@ marked `has_signal: false`, so the map can show them as unavailable).
       "speed_kmh": "28.50",
       "captured_at": "2026-08-16T09:15:04Z",
       "age_seconds": 6,
-      "is_stale": false
+      "is_stale": false,
+      "trajectory": [
+        {"latitude": "23.779000", "longitude": "90.411500", "captured_at": "2026-08-16T08:55:00Z"},
+        {"latitude": "23.779600", "longitude": "90.412000", "captured_at": "2026-08-16T09:05:00Z"},
+        {"latitude": "23.780123", "longitude": "90.412345", "captured_at": "2026-08-16T09:15:04Z"}
+      ]
       // admin session ALSO receives: "driver_name": "...", "accuracy_m": "8.00"
     },
     {
@@ -154,7 +159,8 @@ marked `has_signal: false`, so the map can show them as unavailable).
       "route_label": "Station - Campus",
       "has_signal": false,
       "latitude": null, "longitude": null, "speed_kmh": null,
-      "captured_at": null, "age_seconds": null, "is_stale": true
+      "captured_at": null, "age_seconds": null, "is_stale": true,
+      "trajectory": []
     }
   ]
 }
@@ -162,6 +168,10 @@ marked `has_signal: false`, so the map can show them as unavailable).
 
 `is_stale` is `true` when the latest fix is older than `LOCATION_STALE_SECONDS`
 (default 30). `driver_name` and `accuracy_m` appear **only** for an admin session.
+`trajectory` is the current location's complete trip trace in ascending capture
+order. The live map draws a polyline through every one of these coordinates,
+including intermediate turns; it is not a direct line from the first point to
+the latest point. No driver identity or accuracy is included in trajectory points.
 
 ---
 

@@ -5,6 +5,8 @@
 - ``GET  /vehicles/<id>/latest-location/`` — latest fix for one vehicle.
 - ``GET  /trips/`` — trips for a vehicle/date (admin).
 - ``GET  /trips/<id>/points/`` — trip points for polyline playback (admin).
+- ``GET/POST /routes/`` — saved fixed bus routes (admin).
+- ``DELETE /routes/<id>/`` — remove one saved fixed bus route (admin).
 """
 
 from __future__ import annotations
@@ -20,11 +22,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import is_admin
-from apps.fleet.models import Vehicle
+from apps.fleet.models import BusRoute, Vehicle
 
 from ..selectors import (
     get_latest_active_vehicle_locations,
     get_latest_vehicle_location,
+    get_location_trajectory,
     get_trip_points,
     get_vehicle_trips,
 )
@@ -36,6 +39,8 @@ from ..services import (
 from .permissions import IsAdminRole, IsDriverWithActiveAssignment
 from .serializers import (
     AdminVehicleLocationSerializer,
+    BusRouteCreateSerializer,
+    BusRouteSerializer,
     LocationCreatedSerializer,
     LocationIngestSerializer,
     PublicVehicleLocationSerializer,
@@ -101,7 +106,12 @@ class LatestActiveVehicleLocationsView(APIView):
     def get(self, request: Request) -> Response:
         now = timezone.now()
         snapshots = [
-            VehicleSnapshot(vehicle=vehicle, location=location, now=now)
+            VehicleSnapshot(
+                vehicle=vehicle,
+                location=location,
+                now=now,
+                trajectory=get_location_trajectory(location),
+            )
             for vehicle, location in get_latest_active_vehicle_locations()
         ]
         serializer_cls = _location_serializer_for(request)
@@ -117,13 +127,44 @@ class VehicleLatestLocationView(APIView):
 
     def get(self, request: Request, vehicle_id: int) -> Response:
         vehicle = get_object_or_404(Vehicle, pk=vehicle_id, is_active=True)
+        location = get_latest_vehicle_location(vehicle)
         snapshot = VehicleSnapshot(
             vehicle=vehicle,
-            location=get_latest_vehicle_location(vehicle),
+            location=location,
             now=timezone.now(),
+            trajectory=get_location_trajectory(location),
         )
         serializer_cls = _location_serializer_for(request)
         return Response(serializer_cls(snapshot).data)
+
+
+class BusRouteListCreateView(APIView):
+    """List and create durable route definitions for the bus service."""
+
+    permission_classes = [IsAdminRole]
+
+    def get(self, request: Request) -> Response:
+        routes = BusRoute.objects.prefetch_related("stops").all()
+        data = BusRouteSerializer(routes, many=True).data
+        return Response({"count": len(data), "results": data})
+
+    def post(self, request: Request) -> Response:
+        serializer = BusRouteCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        route = serializer.save()
+        route = BusRoute.objects.prefetch_related("stops").get(pk=route.pk)
+        return Response(BusRouteSerializer(route).data, status=status.HTTP_201_CREATED)
+
+
+class BusRouteDetailView(APIView):
+    """Delete a fixed route that is no longer part of the service."""
+
+    permission_classes = [IsAdminRole]
+
+    def delete(self, request: Request, route_id: int) -> Response:
+        route = get_object_or_404(BusRoute, pk=route_id)
+        route.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TripListView(APIView):
