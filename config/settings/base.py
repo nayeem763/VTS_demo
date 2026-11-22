@@ -8,6 +8,7 @@ so the same code runs everywhere and secrets never live in the repository.
 from __future__ import annotations
 
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import dj_database_url
 from decouple import Csv, config
@@ -224,6 +225,14 @@ MAP_TILE_HOSTS = config(
     default="https://*.tile.openstreetmap.org https://tile.openstreetmap.org",
     cast=Csv(delimiter=" "),
 )
+# The route planner requests road geometry directly from an OSRM-compatible
+# service. Deployments can replace the public endpoint with their own router.
+ROUTING_SERVICE_URL = config(
+    "ROUTING_SERVICE_URL",
+    default="https://router.project-osrm.org",
+).rstrip("/")
+_routing_url = urlsplit(ROUTING_SERVICE_URL)
+ROUTING_SERVICE_ORIGIN = f"{_routing_url.scheme}://{_routing_url.netloc}"
 # Applied to non-admin responses. The Django admin gets a relaxed script-src
 # (it ships inline scripts) via the middleware.
 CONTENT_SECURITY_POLICY = {
@@ -236,7 +245,7 @@ CONTENT_SECURITY_POLICY = {
     "img-src": ["'self'", "data:", *MAP_TILE_HOSTS],
     "style-src": ["'self'", "'unsafe-inline'"],
     "script-src": ["'self'"],
-    "connect-src": ["'self'"],
+    "connect-src": ["'self'", ROUTING_SERVICE_ORIGIN],
 }
 PERMISSIONS_POLICY = "geolocation=(self), camera=(), microphone=(), payment=()"
 
