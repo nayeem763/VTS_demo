@@ -1,0 +1,1211 @@
+/* CU-VTS — Apple macOS Tahoe 26 "Liquid Glass" + Luminous Aurora Material System
+   Realistic crystal refraction, vivid backdrop color smudging, curved prismatic
+   specular rims, concentric pill geometry, and strict Django + Bootstrap 5.2
+   compatibility (zero third-party libraries, zero important overrides). */
+
+/* 1. Bootstrap 5.2 native custom properties & macOS Tahoe optical tokens --- */
+:root {
+  --aurora-canvas: #f3f6fb;
+  --aurora-p: 0;
+
+  /* Native Bootstrap 5.2 theme variables */
+  --bs-body-bg: #f3f6fb;
+  --bs-body-color: #0b1120;
+  --bs-card-bg: rgba(255, 255, 255, 0.34);
+  --bs-border-color: rgba(15, 23, 42, 0.09);
+  --bs-primary: #007aff;
+  --bs-primary-rgb: 0, 122, 255;
+  --bs-link-color: #0066cc;
+  --bs-link-hover-color: #004f9e;
+
+  /* Soft Pearl Light Mode Aurora Orbs (smooth multi-stop radial gradients) */
+  --aurora-orb-1: radial-gradient(
+    circle at 50% 50%,
+    rgba(56, 152, 255, 0.24) 0%,
+    rgba(56, 152, 255, 0.13) 28%,
+    rgba(96, 165, 250, 0.05) 54%,
+    rgba(96, 165, 250, 0) 76%
+  );
+  --aurora-orb-2: radial-gradient(
+    circle at 50% 50%,
+    rgba(139, 124, 246, 0.20) 0%,
+    rgba(139, 124, 246, 0.10) 28%,
+    rgba(167, 139, 250, 0.04) 54%,
+    rgba(167, 139, 250, 0) 76%
+  );
+  --aurora-orb-3: radial-gradient(
+    circle at 50% 50%,
+    rgba(45, 212, 191, 0.19) 0%,
+    rgba(45, 212, 191, 0.09) 28%,
+    rgba(56, 189, 248, 0.03) 54%,
+    rgba(56, 189, 248, 0) 76%
+  );
+
+  /* Realistic macOS Tahoe 26 Crystal Liquid Glass — Light Mode
+     Low-opacity crystal fill + high saturation (265%) produces authentic
+     color smudging from the map/Aurora beneath while keeping crisp ink. */
+  --lg-nav-bg: rgba(255, 255, 255, 0.30);
+  --lg-card-bg: rgba(255, 255, 255, 0.36);
+  --lg-panel-bg: rgba(255, 255, 255, 0.32);
+  --lg-inset-bg: rgba(255, 255, 255, 0.36);
+  --lg-inset-subtle: rgba(255, 255, 255, 0.24);
+  --lg-pill-track: rgba(15, 23, 42, 0.075);
+  --lg-pill-thumb: rgba(255, 255, 255, 0.78);
+  --lg-btn-bg: rgba(255, 255, 255, 0.42);
+  --lg-btn-hover-bg: rgba(255, 255, 255, 0.68);
+  --lg-border: rgba(255, 255, 255, 0.26);
+  --lg-border-hairline: rgba(15, 23, 42, 0.045);
+  --lg-inset-rim: rgba(255, 255, 255, 0.20);
+
+  /* Near-invisible natural curved glass edge glint (no drawn border feel) */
+  --lg-rim-gradient: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.40) 0%,
+    rgba(215, 238, 255, 0.14) 20%,
+    rgba(255, 255, 255, 0.015) 50%,
+    rgba(225, 218, 255, 0.07) 80%,
+    rgba(255, 255, 255, 0.22) 100%
+  );
+
+  /* Soft curved optical surface reflection */
+  --lg-sheen:
+    radial-gradient(
+      125% 58% at 18% 0%,
+      rgba(255, 255, 255, 0.28) 0%,
+      rgba(255, 255, 255, 0.07) 36%,
+      rgba(255, 255, 255, 0) 68%
+    ),
+    radial-gradient(
+      95% 48% at 86% 100%,
+      rgba(185, 224, 255, 0.09) 0%,
+      rgba(255, 255, 255, 0) 64%
+    );
+
+  --lg-backdrop: blur(18px) saturate(265%) contrast(1.04) brightness(1.05);
+  --lg-nav-backdrop: blur(18px) saturate(275%) contrast(1.04) brightness(1.06);
+
+  /* Natural floating glass elevation with minimal top specular hairline */
+  --lg-shadow-card:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.40),
+    0 16px 40px -12px rgba(15, 23, 42, 0.13),
+    0 3px 12px -4px rgba(15, 23, 42, 0.05);
+  --lg-shadow-panel:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.40),
+    0 18px 44px -12px rgba(15, 23, 42, 0.16),
+    0 4px 14px -4px rgba(15, 23, 42, 0.06);
+  --lg-shadow-nav:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.44),
+    0 12px 30px -8px rgba(15, 23, 42, 0.13),
+    0 2px 8px -3px rgba(15, 23, 42, 0.05);
+  --lg-shadow-btn:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.34),
+    0 1px 3px rgba(15, 23, 42, 0.05);
+  --lg-shadow-thumb:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.52),
+    0 1px 4px rgba(15, 23, 42, 0.08);
+
+  /* Align CU-VTS tokens with Light Crystal Glass */
+  --vts-nav-height: 3.7rem;
+  --vts-bg: #f3f6fb;
+  --vts-panel-bg: var(--lg-panel-bg);
+  --vts-surface: #ffffff;
+  --vts-surface-subtle: rgba(255, 255, 255, 0.30);
+  --vts-surface-muted: rgba(15, 23, 42, 0.075);
+  --vts-surface-hover: rgba(255, 255, 255, 0.32);
+  --vts-border: rgba(15, 23, 42, 0.065);
+  --vts-border-strong: rgba(15, 23, 42, 0.11);
+  --vts-ink: #0b1120;
+  --vts-ink-secondary: #1e293b;
+  --vts-ink-muted: #475569;
+  --vts-glass: rgba(255, 255, 255, 0.44);
+  --vts-glass-grouped: rgba(255, 255, 255, 0.34);
+}
+
+html[data-vts-theme="dark"] {
+  --aurora-canvas: #070b14;
+
+  /* Native Bootstrap 5.2 theme variables — Dark Mode */
+  --bs-body-bg: #070b14;
+  --bs-body-color: #f8fafc;
+  --bs-card-bg: rgba(14, 18, 28, 0.40);
+  --bs-border-color: rgba(255, 255, 255, 0.14);
+  --bs-primary: #0a84ff;
+  --bs-primary-rgb: 10, 132, 255;
+  --bs-link-color: #64b5ff;
+  --bs-link-hover-color: #93c5fd;
+
+  /* Deep Midnight Slate Dark Mode Aurora Orbs */
+  --aurora-orb-1: radial-gradient(
+    circle at 50% 50%,
+    rgba(37, 99, 235, 0.26) 0%,
+    rgba(37, 99, 235, 0.14) 28%,
+    rgba(59, 130, 246, 0.05) 54%,
+    rgba(59, 130, 246, 0) 76%
+  );
+  --aurora-orb-2: radial-gradient(
+    circle at 50% 50%,
+    rgba(14, 165, 233, 0.21) 0%,
+    rgba(14, 165, 233, 0.10) 28%,
+    rgba(56, 189, 248, 0.03) 54%,
+    rgba(56, 189, 248, 0) 76%
+  );
+  --aurora-orb-3: radial-gradient(
+    circle at 50% 50%,
+    rgba(124, 58, 237, 0.20) 0%,
+    rgba(124, 58, 237, 0.09) 28%,
+    rgba(139, 92, 246, 0.03) 54%,
+    rgba(139, 92, 246, 0) 76%
+  );
+
+  /* Realistic macOS Tahoe 26 Smoked Crystal Liquid Glass — Dark Mode */
+  --lg-nav-bg: rgba(14, 18, 28, 0.36);
+  --lg-card-bg: rgba(14, 18, 28, 0.40);
+  --lg-panel-bg: rgba(14, 18, 28, 0.38);
+  --lg-inset-bg: rgba(255, 255, 255, 0.055);
+  --lg-inset-subtle: rgba(255, 255, 255, 0.035);
+  --lg-pill-track: rgba(0, 0, 0, 0.28);
+  --lg-pill-thumb: rgba(255, 255, 255, 0.19);
+  --lg-btn-bg: rgba(255, 255, 255, 0.09);
+  --lg-btn-hover-bg: rgba(255, 255, 255, 0.17);
+  --lg-border: rgba(255, 255, 255, 0.09);
+  --lg-border-hairline: rgba(255, 255, 255, 0.045);
+  --lg-inset-rim: rgba(255, 255, 255, 0.045);
+
+  /* Near-invisible dark curved glass edge glint */
+  --lg-rim-gradient: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.17) 0%,
+    rgba(160, 212, 255, 0.07) 20%,
+    rgba(255, 255, 255, 0.012) 50%,
+    rgba(185, 168, 255, 0.045) 80%,
+    rgba(255, 255, 255, 0.10) 100%
+  );
+
+  /* Soft curved optical reflection — Dark Mode */
+  --lg-sheen:
+    radial-gradient(
+      125% 58% at 18% 0%,
+      rgba(255, 255, 255, 0.09) 0%,
+      rgba(200, 228, 255, 0.025) 36%,
+      rgba(255, 255, 255, 0) 68%
+    ),
+    radial-gradient(
+      95% 48% at 86% 100%,
+      rgba(120, 185, 255, 0.045) 0%,
+      rgba(255, 255, 255, 0) 64%
+    );
+
+  --lg-backdrop: blur(20px) saturate(250%) contrast(1.05) brightness(1.09);
+  --lg-nav-backdrop: blur(20px) saturate(260%) contrast(1.05) brightness(1.09);
+
+  --lg-shadow-card:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.13),
+    0 18px 44px -12px rgba(0, 0, 0, 0.56),
+    0 3px 12px -4px rgba(0, 0, 0, 0.28);
+  --lg-shadow-panel:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.14),
+    0 20px 48px -12px rgba(0, 0, 0, 0.60),
+    0 4px 14px -4px rgba(0, 0, 0, 0.30);
+  --lg-shadow-nav:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.14),
+    0 14px 34px -8px rgba(0, 0, 0, 0.54),
+    0 2px 8px -3px rgba(0, 0, 0, 0.26);
+  --lg-shadow-btn:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.09),
+    0 1px 4px rgba(0, 0, 0, 0.20);
+  --lg-shadow-thumb:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.13),
+    0 1px 5px rgba(0, 0, 0, 0.28);
+
+  /* Align CU-VTS tokens with Dark Smoked Crystal */
+  --vts-bg: #070b14;
+  --vts-panel-bg: var(--lg-panel-bg);
+  --vts-surface: #141923;
+  --vts-surface-subtle: rgba(255, 255, 255, 0.05);
+  --vts-surface-muted: rgba(255, 255, 255, 0.09);
+  --vts-surface-hover: rgba(255, 255, 255, 0.09);
+  --vts-border: rgba(255, 255, 255, 0.07);
+  --vts-border-strong: rgba(255, 255, 255, 0.12);
+  --vts-ink: #f8fafc;
+  --vts-ink-secondary: rgba(241, 245, 249, 0.82);
+  --vts-ink-muted: rgba(215, 224, 240, 0.58);
+  --vts-glass: rgba(14, 18, 28, 0.52);
+  --vts-glass-grouped: rgba(14, 18, 28, 0.42);
+}
+
+html {
+  background-color: var(--aurora-canvas);
+}
+
+body {
+  background-color: transparent;
+  color: var(--bs-body-color);
+}
+
+/* 2. Luminous Aurora Ambient Glow (Static at rest, scroll-scrubbed only) --- */
+.aurora-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  background-color: var(--aurora-canvas);
+}
+
+.aurora-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.aurora-orb--1 {
+  top: -22vh;
+  left: -14vw;
+  width: 72vmax;
+  height: 72vmax;
+  background: var(--aurora-orb-1);
+  transform: translate3d(
+      calc(var(--aurora-p, 0) * 6vw),
+      calc(var(--aurora-p, 0) * 8vh),
+      0
+    )
+    scale(calc(1 + var(--aurora-p, 0) * 0.04));
+}
+
+.aurora-orb--2 {
+  top: -14vh;
+  right: -16vw;
+  width: 66vmax;
+  height: 66vmax;
+  background: var(--aurora-orb-2);
+  transform: translate3d(
+      calc(var(--aurora-p, 0) * -7vw),
+      calc(var(--aurora-p, 0) * 6vh),
+      0
+    )
+    scale(calc(1 + var(--aurora-p, 0) * 0.035));
+}
+
+.aurora-orb--3 {
+  bottom: -28vh;
+  left: 18vw;
+  width: 70vmax;
+  height: 70vmax;
+  background: var(--aurora-orb-3);
+  transform: translate3d(
+      calc(var(--aurora-p, 0) * 5vw),
+      calc(var(--aurora-p, 0) * -6vh),
+      0
+    )
+    scale(calc(1 + var(--aurora-p, 0) * 0.04));
+}
+
+@keyframes aurora-drift-1 {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(6vw, 8vh, 0) scale(1.04); }
+}
+
+@keyframes aurora-drift-2 {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(-7vw, 6vh, 0) scale(1.035); }
+}
+
+@keyframes aurora-drift-3 {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(5vw, -6vh, 0) scale(1.04); }
+}
+
+@supports (animation-timeline: scroll()) {
+  .aurora-orb--1 {
+    animation: aurora-drift-1 linear both;
+    animation-timeline: scroll(root);
+  }
+  .aurora-orb--2 {
+    animation: aurora-drift-2 linear both;
+    animation-timeline: scroll(root);
+  }
+  .aurora-orb--3 {
+    animation: aurora-drift-3 linear both;
+    animation-timeline: scroll(root);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora-orb,
+  .aurora-orb--1,
+  .aurora-orb--2,
+  .aurora-orb--3 {
+    animation: none;
+    transform: none;
+  }
+}
+
+/* 3. Apple macOS Tahoe 26 Crystal "Liquid Glass" Surfaces ------------------ */
+
+/* Shared hairline curved specular edge glint */
+.liquid-glass-nav::after,
+.liquid-glass-card::after,
+.vts-split.is-dashboard-expanded .vts-panel-header__inner::after,
+.vts-split.is-dashboard-expanded .vts-kpi-card::after,
+.vts-split.is-dashboard-expanded .vts-roster-card::after,
+.vts-split.is-dashboard-expanded .vts-focus-card::after,
+.vts-split.is-dashboard-expanded .vts-dashboard-controls .vts-route-planner::after,
+.vts-split.is-dashboard-expanded .vts-route-form-card::after,
+.vts-split.is-dashboard-expanded .vts-saved-routes-card::after,
+.tracker-hero-card::after,
+.tracker-metrics::after,
+.tracker-safety-note::after,
+.vts-empty-state::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 0.75px;
+  border-radius: inherit;
+  background: var(--lg-rim-gradient);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Floating Crystal Pill Navigation Bar */
+.liquid-glass-nav {
+  position: sticky;
+  top: 0.65rem;
+  z-index: 1030;
+  margin: 0.65rem 1rem 0;
+  padding-block: 0.28rem;
+  padding-inline: 0.4rem;
+  min-height: 3.05rem;
+  background: var(--lg-nav-bg);
+  border: 0;
+  border-radius: 9999px;
+  box-shadow: var(--lg-shadow-nav);
+  backdrop-filter: var(--lg-nav-backdrop);
+  -webkit-backdrop-filter: var(--lg-nav-backdrop);
+  isolation: isolate;
+}
+
+.liquid-glass-nav::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--lg-sheen);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.liquid-glass-nav > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Subtle vibrancy micro-halo in Light Mode so crisp dark text stays sharp
+   even when vivid map greens/blues smudge directly behind the crystal glass */
+html:not([data-vts-theme="dark"]) .liquid-glass-nav .nav-link,
+html:not([data-vts-theme="dark"]) .liquid-glass-nav .vts-brand-name,
+html:not([data-vts-theme="dark"]) .vts-side .vts-panel-title,
+html:not([data-vts-theme="dark"]) .vts-side .vehicle-item__title {
+  text-shadow: 0 0.5px 0 rgba(255, 255, 255, 0.55);
+}
+
+/* Concentric Liquid Glass Nav Pills */
+.vts-nav .nav-link {
+  border-radius: 9999px;
+}
+
+.vts-nav .nav-link.active {
+  color: var(--vts-ink);
+  background: var(--lg-pill-thumb);
+  box-shadow: var(--lg-shadow-thumb);
+}
+
+.vts-nav .vts-theme-toggle,
+.vts-nav .vts-logout,
+.vts-nav .vts-btn-ghost {
+  background: var(--lg-btn-bg);
+  border: 0;
+  box-shadow: var(--lg-shadow-btn);
+}
+
+.vts-nav .vts-theme-toggle:hover,
+.vts-nav .vts-logout:hover,
+.vts-nav .vts-btn-ghost:hover {
+  background: var(--lg-btn-hover-bg);
+}
+
+.vts-nav .vts-btn-solid,
+.btn-primary {
+  box-shadow:
+    inset 0 1px 0.5px rgba(255, 255, 255, 0.45),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.14),
+    0 4px 14px -2px rgba(0, 122, 255, 0.36);
+}
+
+@media (max-width: 991.98px) {
+  .liquid-glass-nav {
+    border-radius: 24px;
+    margin: 0.55rem 0.75rem 0;
+  }
+}
+
+/* Luminous Crystal Glass Card */
+.liquid-glass-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--lg-card-bg);
+  border: 0;
+  border-radius: 26px;
+  box-shadow: var(--lg-shadow-card);
+  backdrop-filter: var(--lg-backdrop);
+  -webkit-backdrop-filter: var(--lg-backdrop);
+  isolation: isolate;
+}
+
+.liquid-glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--lg-sheen);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.liquid-glass-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Floating Pill Liquid Glass Control Button */
+.liquid-glass-btn {
+  position: relative;
+  overflow: hidden;
+  border-radius: 9999px;
+  color: var(--vts-ink);
+  background: var(--lg-btn-bg);
+  border: 0;
+  box-shadow: var(--lg-shadow-btn);
+  backdrop-filter: blur(16px) saturate(240%) brightness(1.06);
+  -webkit-backdrop-filter: blur(16px) saturate(240%) brightness(1.06);
+  transition:
+    background-color var(--vts-transition),
+    box-shadow var(--vts-transition),
+    transform 140ms ease;
+}
+
+.liquid-glass-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--lg-sheen);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.liquid-glass-btn > * {
+  position: relative;
+  z-index: 1;
+}
+
+.liquid-glass-btn:hover,
+.liquid-glass-btn:focus-visible {
+  color: var(--vts-ink);
+  background: var(--lg-btn-hover-bg);
+  transform: translateY(-0.5px);
+}
+
+/* Strict anti-stacking guard: never nest backdrop-filter inside glass */
+.liquid-glass-nav .liquid-glass-btn,
+.liquid-glass-card .liquid-glass-btn,
+.vts-side .liquid-glass-btn {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* 4. Full-Bleed Map + Floating macOS Tahoe Liquid Glass Inspector ---------- */
+
+.vts-footer {
+  background: var(--lg-nav-bg);
+  border-top: 1px solid var(--lg-border-hairline);
+  backdrop-filter: blur(20px) saturate(220%);
+  -webkit-backdrop-filter: blur(20px) saturate(220%);
+}
+
+/* Split View: Edge-to-edge full-bleed live map flowing UNDER the floating
+   Liquid Glass pill navbar and floating Liquid Glass right inspector sheet */
+.vts-split:not(.is-dashboard-expanded) {
+  position: relative;
+  margin-top: -3.7rem;
+  height: calc(100dvh - var(--vts-footer-height));
+  padding: 0;
+  gap: 0;
+  background: transparent;
+}
+
+.vts-split:not(.is-dashboard-expanded) .vts-map {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Floating Crystal Glass Map Controls tucked cleanly below the pill navbar */
+.vts-split:not(.is-dashboard-expanded) .leaflet-top.leaflet-left {
+  top: 4.55rem;
+  left: 1rem;
+}
+
+.vts-split:not(.is-dashboard-expanded) .leaflet-bottom.leaflet-right {
+  right: auto;
+  left: 1rem;
+  bottom: 0.85rem;
+}
+
+.vts-map .leaflet-bar {
+  border-radius: 9999px;
+  background: var(--lg-nav-bg);
+  border: 0;
+  box-shadow: var(--lg-shadow-nav);
+  backdrop-filter: var(--lg-nav-backdrop);
+  -webkit-backdrop-filter: var(--lg-nav-backdrop);
+}
+
+.vts-map .leaflet-bar a {
+  background: transparent;
+  color: var(--vts-ink);
+  border-bottom-color: var(--lg-border-hairline);
+}
+
+.vts-map .leaflet-bar a:hover {
+  background: var(--lg-btn-hover-bg);
+}
+
+.vts-map .leaflet-control-attribution {
+  border-radius: 9999px;
+  padding-inline: 0.65rem;
+  background: var(--lg-nav-bg);
+  box-shadow: var(--lg-shadow-btn);
+  backdrop-filter: blur(18px) saturate(240%);
+  -webkit-backdrop-filter: blur(18px) saturate(240%);
+}
+
+/* Floating macOS Tahoe Liquid Glass Right Inspector Sheet */
+.vts-split:not(.is-dashboard-expanded) .vts-side-shell {
+  position: absolute;
+  top: 4.55rem;
+  right: 1rem;
+  bottom: 0.9rem;
+  z-index: 1010;
+  width: 23.75rem;
+  flex: none;
+  transition: width 240ms cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.vts-split.is-side-collapsed:not(.is-dashboard-expanded) .vts-side-shell {
+  width: 3.95rem;
+}
+
+/* Non-scrolling hairline curved specular glass rim around the floating sheet,
+   with an exact 80px surgical opening on the left edge for the water-drop tab */
+.vts-split:not(.is-dashboard-expanded) .vts-side-shell::before {
+  display: none;
+}
+
+.vts-split:not(.is-dashboard-expanded) .vts-side-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 0.75px;
+  border-radius: 28px;
+  background: var(--lg-rim-gradient);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% 100%,
+    0 100%,
+    0 calc(50% + 40px),
+    2px calc(50% + 40px),
+    2px calc(50% - 40px),
+    0 calc(50% - 40px)
+  );
+  pointer-events: none;
+  z-index: 26;
+}
+
+.vts-split.is-side-collapsed:not(.is-dashboard-expanded) .vts-side-shell::after {
+  clip-path: none;
+}
+
+.vts-split.is-side-collapsed:not(.is-dashboard-expanded) .vts-side-shell:hover::after,
+.vts-split.is-side-collapsed:not(.is-dashboard-expanded) .vts-side-shell:focus-within::after {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% 100%,
+    0 100%,
+    0 calc(50% + 40px),
+    2px calc(50% + 40px),
+    2px calc(50% - 40px),
+    0 calc(50% - 40px)
+  );
+}
+
+.vts-collapse-tab {
+  background: var(--lg-panel-bg);
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: var(--lg-backdrop);
+  -webkit-backdrop-filter: var(--lg-backdrop);
+}
+
+.vts-tab-outline {
+  color: var(--lg-border);
+}
+
+.vts-collapse-tab:hover,
+.vts-collapse-tab:focus-visible {
+  background: var(--lg-btn-hover-bg);
+  color: var(--vts-ink);
+}
+
+.vts-side {
+  position: relative;
+  border-radius: 28px;
+  background: var(--lg-panel-bg);
+  background-image: var(--lg-sheen);
+  background-clip: padding-box;
+  border: 0;
+  box-shadow: var(--lg-shadow-panel);
+  backdrop-filter: var(--lg-backdrop);
+  -webkit-backdrop-filter: var(--lg-backdrop);
+}
+
+/* Transparent continuous glass header — zero opaque box chopping the sheet */
+.vts-split:not(.is-dashboard-expanded) .vts-panel-header {
+  padding: 1.05rem 1.05rem 0.85rem;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: 1px solid var(--lg-border-hairline);
+}
+
+/* macOS Tahoe Pill Action Buttons inside the inspector sheet */
+.vts-panel-actions .btn {
+  border-radius: 9999px;
+}
+
+.vts-panel-actions .btn-outline-secondary {
+  --bs-btn-bg: var(--lg-btn-bg);
+  --bs-btn-border-color: transparent;
+  --bs-btn-hover-bg: var(--lg-btn-hover-bg);
+  --bs-btn-hover-border-color: transparent;
+  box-shadow: var(--lg-shadow-btn);
+}
+
+.vts-expand-toggle,
+html[data-vts-theme="dark"] .vts-expand-toggle {
+  background: var(--lg-btn-bg);
+  border: 0;
+  box-shadow: var(--lg-shadow-btn);
+}
+
+.vts-expand-toggle:hover,
+.vts-expand-toggle:focus-visible,
+html[data-vts-theme="dark"] .vts-expand-toggle:hover,
+html[data-vts-theme="dark"] .vts-expand-toggle:focus-visible {
+  background: var(--lg-btn-hover-bg);
+  border: 0;
+}
+
+/* Authentic macOS Tahoe Pill Segmented Controls */
+.vts-panel-tabs,
+.vts-status-pills {
+  padding: 3px;
+  background: var(--lg-pill-track);
+  border-radius: 9999px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.vts-panel-tabs .nav-link,
+.vts-filter-pill {
+  border-radius: 9999px;
+}
+
+.vts-panel-tabs .nav-link.active,
+.vts-filter-pill.active,
+html[data-vts-theme="dark"] .vts-panel-tabs .nav-link.active,
+html[data-vts-theme="dark"] .vts-filter-pill.active {
+  color: var(--vts-ink);
+  background: var(--lg-pill-thumb);
+  box-shadow: var(--lg-shadow-thumb);
+}
+
+/* Borderless quiet live telemetry caption */
+.vts-split:not(.is-dashboard-expanded) .vts-status-bar {
+  padding: 0.2rem 0.25rem;
+  background: transparent;
+  border: 0;
+  font-size: 0.74rem;
+}
+
+/* Concentric crystal-tinted inner wells (lets smudged map colors stay alive) */
+.vts-split:not(.is-dashboard-expanded) #vehicle-list .list-group,
+.vts-split:not(.is-dashboard-expanded) #trip-list .list-group,
+.vts-split:not(.is-dashboard-expanded) .vts-route-planner,
+.vts-split:not(.is-dashboard-expanded) .vts-route-form-card,
+.vts-split:not(.is-dashboard-expanded) .route-list-item,
+.vts-split:not(.is-dashboard-expanded) .vts-controls--bordered {
+  background: var(--lg-inset-bg);
+  border: 0;
+  border-radius: 18px;
+  box-shadow: inset 0 0.5px 0 var(--lg-inset-rim);
+}
+
+html[data-vts-theme="dark"] .vts-split:not(.is-dashboard-expanded) #vehicle-list .list-group,
+html[data-vts-theme="dark"] .vts-split:not(.is-dashboard-expanded) #trip-list .list-group,
+html[data-vts-theme="dark"] .vts-split:not(.is-dashboard-expanded) .vts-route-planner,
+html[data-vts-theme="dark"] .vts-split:not(.is-dashboard-expanded) .vts-route-form-card,
+html[data-vts-theme="dark"] .vts-split:not(.is-dashboard-expanded) .route-list-item,
+html[data-vts-theme="dark"] .vts-split:not(.is-dashboard-expanded) .vts-controls--bordered {
+  border: 0;
+  box-shadow: inset 0 0.5px 0 var(--lg-inset-rim);
+}
+
+.vts-split:not(.is-dashboard-expanded) .vts-search .form-control,
+.vts-roster-search .form-control {
+  border-radius: 9999px;
+}
+
+/* Collapsed floating macOS Tahoe vertical Liquid Glass Dock Rail */
+.vts-rail-btn {
+  border-radius: 16px;
+}
+
+.vts-rail-btn--expand {
+  border-radius: 9999px;
+  background: var(--lg-btn-bg);
+  box-shadow: var(--lg-shadow-btn);
+}
+
+.vts-rail-btn:hover,
+.vts-rail-btn:focus-visible {
+  background: var(--lg-btn-hover-bg);
+  border-color: transparent;
+}
+
+.vts-rail-btn.is-active {
+  color: var(--vts-ink);
+  background: var(--lg-pill-thumb);
+  border-color: transparent;
+  box-shadow: var(--lg-shadow-thumb);
+}
+
+/* 5. Maximized Executive Dashboard — Map-Harmonized Serene Luminance ------- */
+
+/* Calm 2-tone cartographic luminance ONLY when the dashboard is maximized:
+   soft map-greenery sage + calm river mist (zero purple/neon/multi-color glare) */
+html.vts-dashboard-maximized {
+  --aurora-canvas: #f4f7f5;
+  --bs-body-bg: #f4f7f5;
+  --aurora-orb-1: radial-gradient(
+    circle at 50% 50%,
+    rgba(134, 200, 156, 0.16) 0%,
+    rgba(148, 208, 168, 0.08) 32%,
+    rgba(164, 216, 182, 0.025) 58%,
+    rgba(164, 216, 182, 0) 78%
+  );
+  --aurora-orb-2: radial-gradient(
+    circle at 50% 50%,
+    rgba(142, 184, 230, 0.14) 0%,
+    rgba(156, 194, 236, 0.065) 32%,
+    rgba(170, 204, 240, 0.02) 58%,
+    rgba(170, 204, 240, 0) 78%
+  );
+  --lg-nav-bg: rgba(255, 255, 255, 0.56);
+  --lg-card-bg: rgba(255, 255, 255, 0.58);
+  --lg-inset-bg: rgba(255, 255, 255, 0.50);
+  --lg-backdrop: blur(20px) saturate(145%) brightness(1.02);
+  --lg-nav-backdrop: blur(20px) saturate(150%) brightness(1.03);
+  --lg-rim-gradient: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.42) 0%,
+    rgba(255, 255, 255, 0.12) 24%,
+    rgba(255, 255, 255, 0.015) 54%,
+    rgba(255, 255, 255, 0.18) 100%
+  );
+  --lg-sheen: radial-gradient(
+    120% 55% at 18% 0%,
+    rgba(255, 255, 255, 0.24) 0%,
+    rgba(255, 255, 255, 0.05) 38%,
+    rgba(255, 255, 255, 0) 68%
+  );
+}
+
+html.vts-dashboard-maximized[data-vts-theme="dark"] {
+  --aurora-canvas: #151e28;
+  --bs-body-bg: #151e28;
+  --aurora-orb-1: radial-gradient(
+    circle at 50% 50%,
+    rgba(56, 126, 108, 0.17) 0%,
+    rgba(52, 114, 100, 0.08) 32%,
+    rgba(46, 98, 88, 0.025) 58%,
+    rgba(46, 98, 88, 0) 78%
+  );
+  --aurora-orb-2: radial-gradient(
+    circle at 50% 50%,
+    rgba(56, 106, 162, 0.18) 0%,
+    rgba(50, 96, 148, 0.085) 32%,
+    rgba(44, 84, 132, 0.025) 58%,
+    rgba(44, 84, 132, 0) 78%
+  );
+  --lg-nav-bg: rgba(24, 34, 47, 0.52);
+  --lg-card-bg: rgba(24, 34, 47, 0.52);
+  --lg-inset-bg: rgba(255, 255, 255, 0.045);
+  --lg-backdrop: blur(20px) saturate(138%) brightness(1.04);
+  --lg-nav-backdrop: blur(20px) saturate(142%) brightness(1.04);
+  --lg-rim-gradient: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.16) 0%,
+    rgba(255, 255, 255, 0.05) 24%,
+    rgba(255, 255, 255, 0.01) 54%,
+    rgba(255, 255, 255, 0.08) 100%
+  );
+  --lg-sheen: radial-gradient(
+    120% 55% at 18% 0%,
+    rgba(255, 255, 255, 0.075) 0%,
+    rgba(255, 255, 255, 0.018) 38%,
+    rgba(255, 255, 255, 0) 68%
+  );
+}
+
+html.vts-dashboard-maximized .aurora-orb--1 {
+  top: -26vh;
+  left: -10vw;
+  width: 76vmax;
+  height: 76vmax;
+}
+
+html.vts-dashboard-maximized .aurora-orb--2 {
+  top: auto;
+  bottom: -26vh;
+  right: -12vw;
+  width: 74vmax;
+  height: 74vmax;
+}
+
+html.vts-dashboard-maximized .aurora-orb--3 {
+  display: none;
+}
+
+.vts-split.is-dashboard-expanded {
+  background: transparent;
+}
+
+.vts-split.is-dashboard-expanded .vts-panel-header--tabbed .vts-expand-toggle,
+html[data-vts-theme="dark"] .vts-split.is-dashboard-expanded .vts-panel-header--tabbed .vts-expand-toggle {
+  color: var(--vts-ink);
+  background: var(--lg-btn-bg);
+  border: 0;
+  box-shadow: var(--lg-shadow-btn);
+}
+
+.vts-split.is-dashboard-expanded .vts-panel-header--tabbed .vts-expand-toggle:hover,
+.vts-split.is-dashboard-expanded .vts-panel-header--tabbed .vts-expand-toggle:focus-visible,
+html[data-vts-theme="dark"] .vts-split.is-dashboard-expanded .vts-panel-header--tabbed .vts-expand-toggle:hover,
+html[data-vts-theme="dark"] .vts-split.is-dashboard-expanded .vts-panel-header--tabbed .vts-expand-toggle:focus-visible {
+  background: var(--lg-btn-hover-bg);
+  border: 0;
+}
+
+.vts-split.is-dashboard-expanded .vts-side-shell {
+  position: static;
+  width: 100%;
+  flex: 1 1 100%;
+}
+
+.vts-split.is-dashboard-expanded .vts-side-shell::after {
+  display: none;
+}
+
+.vts-split.is-dashboard-expanded .vts-side {
+  background: transparent;
+  background-image: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.vts-split.is-dashboard-expanded .vts-panel-header {
+  padding: 0.7rem 2rem 0.25rem;
+  background: transparent;
+  border-bottom: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.vts-split.is-dashboard-expanded .vts-panel-header__inner {
+  position: relative;
+  overflow: hidden;
+  padding: 0.65rem 1.2rem;
+  background: var(--lg-card-bg);
+  border: 0;
+  border-radius: 9999px;
+  box-shadow: var(--lg-shadow-nav);
+  backdrop-filter: var(--lg-backdrop);
+  -webkit-backdrop-filter: var(--lg-backdrop);
+  isolation: isolate;
+}
+
+.vts-split.is-dashboard-expanded .vts-panel-header__inner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--lg-sheen);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.vts-split.is-dashboard-expanded .vts-panel-header__inner > * {
+  position: relative;
+  z-index: 1;
+}
+
+.vts-split.is-dashboard-expanded .vts-dashboard-body {
+  padding: 0.9rem 2rem 1.75rem;
+}
+
+.vts-split.is-dashboard-expanded .vts-kpi-strip {
+  margin-bottom: 0.95rem;
+}
+
+.vts-split.is-dashboard-expanded .vts-kpi-card,
+.vts-split.is-dashboard-expanded .vts-roster-card,
+.vts-split.is-dashboard-expanded .vts-focus-card,
+.vts-split.is-dashboard-expanded .vts-dashboard-controls .vts-route-planner,
+.vts-split.is-dashboard-expanded .vts-route-form-card,
+.vts-split.is-dashboard-expanded .vts-saved-routes-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--lg-card-bg);
+  border: 0;
+  border-radius: 24px;
+  box-shadow: var(--lg-shadow-card);
+  backdrop-filter: var(--lg-backdrop);
+  -webkit-backdrop-filter: var(--lg-backdrop);
+  isolation: isolate;
+}
+
+.vts-split.is-dashboard-expanded .vts-kpi-card::before,
+.vts-split.is-dashboard-expanded .vts-roster-card::before,
+.vts-split.is-dashboard-expanded .vts-focus-card::before,
+.vts-split.is-dashboard-expanded .vts-dashboard-controls .vts-route-planner::before,
+.vts-split.is-dashboard-expanded .vts-route-form-card::before,
+.vts-split.is-dashboard-expanded .vts-saved-routes-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--lg-sheen);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.vts-split.is-dashboard-expanded .vts-kpi-card > *,
+.vts-split.is-dashboard-expanded .vts-roster-card > *,
+.vts-split.is-dashboard-expanded .vts-focus-card > *,
+.vts-split.is-dashboard-expanded .vts-dashboard-controls .vts-route-planner > *,
+.vts-split.is-dashboard-expanded .vts-route-form-card > *,
+.vts-split.is-dashboard-expanded .vts-saved-routes-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.vts-split.is-dashboard-expanded .vts-roster-head,
+.vts-split.is-dashboard-expanded .vts-panel-note {
+  background: var(--lg-inset-subtle);
+}
+
+.vts-split.is-dashboard-expanded .vts-roster-heading .vts-status-bar {
+  background: var(--lg-pill-track);
+  border: 0;
+}
+
+.vts-split.is-dashboard-expanded .vts-ops-rail {
+  top: 5.4rem;
+}
+
+/* Auth, Tracker, and Empty-State Liquid Glass Cards */
+.vts-auth-card.liquid-glass-card,
+.vts-empty-state {
+  border-radius: 28px;
+}
+
+.vts-auth-card .btn[type="submit"] {
+  border-radius: 9999px;
+}
+
+.tracker-hero-card,
+.tracker-metrics,
+.tracker-safety-note,
+.vts-empty-state {
+  position: relative;
+  overflow: hidden;
+  background: var(--lg-card-bg);
+  border: 0;
+  border-radius: 26px;
+  box-shadow: var(--lg-shadow-card);
+  backdrop-filter: var(--lg-backdrop);
+  -webkit-backdrop-filter: var(--lg-backdrop);
+  isolation: isolate;
+}
+
+.tracker-hero-card::before,
+.tracker-metrics::before,
+.tracker-safety-note::before,
+.vts-empty-state::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--lg-sheen);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.tracker-hero-card > *,
+.tracker-metrics > *,
+.tracker-safety-note > *,
+.vts-empty-state > * {
+  position: relative;
+  z-index: 1;
+}
+
+.tracker-metrics > div {
+  background: transparent;
+}
+
+/* 6. Bootstrap 5.2 Translucent Form & Dark-Mode Control Polish ------------- */
+.form-control,
+.form-select {
+  background-color: var(--lg-inset-bg);
+  border: 0;
+  border-radius: 12px;
+  color: var(--vts-ink);
+  box-shadow:
+    inset 0 0.5px 0 var(--lg-inset-rim),
+    inset 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+html[data-vts-theme="dark"] .form-control,
+html[data-vts-theme="dark"] .form-select {
+  background-color: rgba(255, 255, 255, 0.07);
+  border: 0;
+  color: var(--vts-ink);
+  box-shadow:
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.09),
+    inset 0 1px 2px rgba(0, 0, 0, 0.22);
+}
+
+html[data-vts-theme="dark"] .form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23cbd5e1' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+
+html[data-vts-theme="dark"] .form-control:focus,
+html[data-vts-theme="dark"] .form-select:focus {
+  background-color: rgba(255, 255, 255, 0.11);
+  color: var(--vts-ink);
+}
+
+html[data-vts-theme="dark"] .navbar-toggler-icon,
+html[data-vts-theme="dark"] .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+html[data-vts-theme="dark"] .alert-danger {
+  color: #fecaca;
+  background-color: rgba(220, 38, 38, 0.20);
+  border: 1px solid rgba(248, 113, 113, 0.30);
+}
+
+html[data-vts-theme="dark"] .alert-success {
+  color: #bbf7d0;
+  background-color: rgba(22, 163, 74, 0.20);
+  border: 1px solid rgba(74, 222, 128, 0.30);
+}
+
+html[data-vts-theme="dark"] .alert-info {
+  color: #bfdbfe;
+  background-color: rgba(37, 99, 235, 0.20);
+  border: 1px solid rgba(96, 165, 250, 0.30);
+}
+
+html[data-vts-theme="dark"] .alert-warning {
+  color: #fde68a;
+  background-color: rgba(217, 119, 6, 0.22);
+  border: 1px solid rgba(251, 191, 36, 0.32);
+}
+
+/* Google Maps Day & Night exact SVG color-matrix calibration */
+html:not([data-vts-theme="dark"]) .vts-map .leaflet-tile-pane {
+  filter: url(#gmaps-day-filter) contrast(1.04) saturate(1.12);
+}
+
+html[data-vts-theme="dark"] .vts-map .leaflet-tile-pane {
+  filter: url(#gmaps-dark-filter) contrast(1.06) saturate(1.14);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1120px) {
+  .vts-split.is-dashboard-expanded .vts-panel-header {
+    padding: 0.65rem 1.25rem 0.2rem;
+  }
+  .vts-split.is-dashboard-expanded .vts-panel-header__inner {
+    border-radius: 24px;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .vts-split:not(.is-dashboard-expanded) {
+    margin-top: 0;
+    height: auto;
+  }
+  .vts-split:not(.is-dashboard-expanded) .vts-map {
+    height: 50dvh;
+    min-height: 20rem;
+  }
+  .vts-split:not(.is-dashboard-expanded) .leaflet-top.leaflet-left {
+    top: 0.65rem;
+    left: 0.65rem;
+  }
+  .vts-split:not(.is-dashboard-expanded) .leaflet-bottom.leaflet-right {
+    right: 0.65rem;
+    left: auto;
+    bottom: 0.65rem;
+  }
+  .vts-split:not(.is-dashboard-expanded) .vts-side-shell,
+  .vts-split.is-side-collapsed:not(.is-dashboard-expanded) .vts-side-shell {
+    position: static;
+    width: 100%;
+  }
+  .vts-split:not(.is-dashboard-expanded) .vts-side-shell::after {
+    display: none;
+  }
+  .vts-side {
+    border-radius: 24px 24px 0 0;
+    border-color: var(--lg-border);
+  }
+}
