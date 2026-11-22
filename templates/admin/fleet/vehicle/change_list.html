@@ -3,7 +3,13 @@
 {% block object-tools-items %}
   {% if perms.tracking.view_location %}
   <li>
-    <a href="{% url 'admin:fleet_vehicle_generate_fleet_report' %}">Generate fleet record PDF</a>
+    <a href="{% url 'admin:fleet_vehicle_generate_fleet_report' %}?report_type=executive_summary">Executive Overview PDF</a>
+  </li>
+  <li>
+    <a href="{% url 'admin:fleet_vehicle_generate_fleet_report' %}?report_type=trip_summary">Trip Ledger PDF</a>
+  </li>
+  <li>
+    <a href="{% url 'admin:fleet_vehicle_generate_fleet_report' %}?report_type=safety_audit">Safety Audit PDF</a>
   </li>
   {% endif %}
   {{ block.super }}

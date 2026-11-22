@@ -3,11 +3,16 @@ from __future__ import annotations
 from django.contrib import admin
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
 from django.urls import path
 from django.utils import timezone
 
-from apps.tracking.reports import build_fleet_record_pdf, fleet_record_filename
+from apps.tracking.reports import (
+    REPORT_CATALOG,
+    ReportType,
+    build_fleet_record_pdf,
+    fleet_record_filename,
+)
 
 from .models import BusRoute, DriverAssignment, RouteStop, Vehicle
 from .services import deactivate_vehicle, end_assignment
@@ -19,7 +24,13 @@ class VehicleAdmin(admin.ModelAdmin):
     list_filter = ("is_active",)
     search_fields = ("bus_number", "registration_number", "route_label")
     readonly_fields = ("created_at", "updated_at")
-    actions = ("action_generate_fleet_record", "action_deactivate")
+    actions = (
+        "action_generate_fleet_record",
+        "action_generate_trip_ledger",
+        "action_generate_safety_audit",
+        "action_generate_telemetry_trace",
+        "action_deactivate",
+    )
     change_list_template = "admin/fleet/vehicle/change_list.html"
 
     def get_urls(self):
@@ -36,28 +47,88 @@ class VehicleAdmin(admin.ModelAdmin):
     def get_actions(self, request):
         actions = super().get_actions(request)
         if not self._can_export_location_data(request):
-            actions.pop("action_generate_fleet_record", None)
+            for key in (
+                "action_generate_fleet_record",
+                "action_generate_trip_ledger",
+                "action_generate_safety_audit",
+                "action_generate_telemetry_trace",
+            ):
+                actions.pop(key, None)
         return actions
 
     def generate_fleet_record_view(self, request: HttpRequest) -> HttpResponse:
-        """Download a full-fleet record directly from the Vehicle changelist."""
+        """Download a fleet PDF directly from the Vehicle changelist."""
         allowed = self.has_view_or_change_permission(request)
         if not allowed or not self._can_export_location_data(request):
             raise PermissionDenied
+        report_type = request.GET.get("report_type", "").strip() or ReportType.EXECUTIVE_SUMMARY
+        if report_type not in REPORT_CATALOG:
+            return HttpResponseBadRequest(
+                "Unsupported report_type.", content_type="text/plain; charset=utf-8"
+            )
         queryset = self.get_queryset(request)
-        return self._pdf_response(queryset=queryset, generated_by=request.user.get_username())
+        return self._pdf_response(
+            queryset=queryset,
+            generated_by=request.user.get_username(),
+            report_type=report_type,
+        )
 
-    @admin.action(description="Generate PDF fleet record for selected vehicles")
+    @admin.action(description="PDF: Executive Fleet Overview for selected vehicles")
     def action_generate_fleet_record(self, request, queryset) -> HttpResponse:
-        """Download one report scoped to the selected Vehicle rows."""
+        """Download an executive fleet overview scoped to selected vehicles."""
         if not self._can_export_location_data(request):
             raise PermissionDenied
-        return self._pdf_response(queryset=queryset, generated_by=request.user.get_username())
+        return self._pdf_response(
+            queryset=queryset,
+            generated_by=request.user.get_username(),
+            report_type=ReportType.EXECUTIVE_SUMMARY,
+        )
 
-    def _pdf_response(self, *, queryset, generated_by: str) -> HttpResponse:
-        pdf = build_fleet_record_pdf(vehicles=queryset, generated_by=generated_by)
+    @admin.action(description="PDF: Trip Operations Ledger for selected vehicles")
+    def action_generate_trip_ledger(self, request, queryset) -> HttpResponse:
+        if not self._can_export_location_data(request):
+            raise PermissionDenied
+        return self._pdf_response(
+            queryset=queryset,
+            generated_by=request.user.get_username(),
+            report_type=ReportType.TRIP_SUMMARY,
+        )
+
+    @admin.action(description="PDF: Speed & Safety Audit for selected vehicles")
+    def action_generate_safety_audit(self, request, queryset) -> HttpResponse:
+        if not self._can_export_location_data(request):
+            raise PermissionDenied
+        return self._pdf_response(
+            queryset=queryset,
+            generated_by=request.user.get_username(),
+            report_type=ReportType.SAFETY_AUDIT,
+        )
+
+    @admin.action(description="PDF: Route Telemetry Trace (smart sampled) for selected vehicles")
+    def action_generate_telemetry_trace(self, request, queryset) -> HttpResponse:
+        if not self._can_export_location_data(request):
+            raise PermissionDenied
+        return self._pdf_response(
+            queryset=queryset,
+            generated_by=request.user.get_username(),
+            report_type=ReportType.TELEMETRY_AUDIT,
+        )
+
+    def _pdf_response(
+        self,
+        *,
+        queryset,
+        generated_by: str,
+        report_type: str = ReportType.EXECUTIVE_SUMMARY,
+    ) -> HttpResponse:
+        pdf = build_fleet_record_pdf(
+            vehicles=queryset,
+            generated_by=generated_by,
+            report_type=report_type,
+        )
+        filename = fleet_record_filename(report_type=report_type)
         response = HttpResponse(pdf, content_type="application/pdf")
-        response["Content-Disposition"] = f'attachment; filename="{fleet_record_filename()}"'
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
         response["Content-Length"] = str(len(pdf))
         response["X-Content-Type-Options"] = "nosniff"
         response["Cache-Control"] = "private, no-store"
