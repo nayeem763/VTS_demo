@@ -97,15 +97,16 @@
           </svg>
           <span>Load trips</span>
         </button>
-        <button id="export-trip-history" type="button" class="btn btn-outline-primary btn-sm">
+        <button id="export-trip-history" type="button" class="btn btn-outline-primary btn-sm"
+                data-bs-toggle="modal" data-bs-target="#trip-report-modal">
           <svg class="vts-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/>
             <path d="M14 3v5h5M12 12v5M9.5 14.5 12 17l2.5-2.5"/>
           </svg>
-          <span>Export PDF for all vehicles</span>
+          <span>Export PDF…</span>
         </button>
       </div>
-      <p class="vts-filter-hint">The PDF applies the selected date and time range to every vehicle, then includes a combined timeline.</p>
+      <p class="vts-filter-hint">Choose between a clean Trip Operations Ledger (1 row per journey), Speed &amp; Safety Audit, or smart-sampled route checkpoints.</p>
       <div id="history-error" class="alert alert-warning small mt-3 mb-0 d-none" role="alert"></div>
     </div>
 
@@ -129,10 +130,119 @@
     </aside>
   </div>
 </div>
+
+<div class="modal fade" id="trip-report-modal" tabindex="-1" aria-labelledby="trip-report-modal-title" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content liquid-glass-card vts-report-modal">
+      <form method="get" action="{% url 'web:trip_history_pdf' %}" id="trip-report-form">
+        <div class="modal-header vts-report-modal__header">
+          <div>
+            <p class="vts-panel-eyebrow mb-1">CU Transport Authority · Trip Archive Export</p>
+            <h2 class="modal-title h5 mb-0 fw-bold" id="trip-report-modal-title">Export trip history PDF</h2>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body vts-report-modal__body">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold mb-2">1. Select report type</label>
+            <div class="vts-report-grid vts-report-grid--three" role="radiogroup" aria-label="Trip PDF report type">
+              {% for choice in trip_report_choices %}
+              <label class="vts-report-option">
+                <input type="radio"
+                       name="report_type"
+                       value="{{ choice.key }}"
+                       class="vts-report-option__input"
+                       data-purpose="{{ choice.purpose }}"
+                       data-audience="{{ choice.audience }}"
+                       data-outputs="{{ choice.outputs }}"
+                       {% if forloop.first %}checked{% endif %}>
+                <span class="vts-report-option__card">
+                  <span class="vts-report-option__title">{{ choice.short_label }}</span>
+                  <span class="vts-report-option__desc">{{ choice.summary }}</span>
+                </span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="vts-report-spec mb-3" id="trip-report-spec" aria-live="polite">
+            <div class="vts-report-spec__row">
+              <span class="vts-report-spec__label">Purpose</span>
+              <span class="vts-report-spec__val" data-spec-field="purpose">
+                {% if trip_report_choices %}{{ trip_report_choices.0.purpose }}{% endif %}
+              </span>
+            </div>
+            <div class="vts-report-spec__row">
+              <span class="vts-report-spec__label">Audience</span>
+              <span class="vts-report-spec__val" data-spec-field="audience">
+                {% if trip_report_choices %}{{ trip_report_choices.0.audience }}{% endif %}
+              </span>
+            </div>
+            <div class="vts-report-spec__row">
+              <span class="vts-report-spec__label">Outputs</span>
+              <span class="vts-report-spec__val" data-spec-field="outputs">
+                {% if trip_report_choices %}{{ trip_report_choices.0.outputs }}{% endif %}
+              </span>
+            </div>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-md-6">
+              <label for="trip-report-vehicle" class="form-label small fw-semibold mb-1">2. Vehicle scope</label>
+              <select id="trip-report-vehicle" name="vehicle" class="form-select form-select-sm">
+                <option value="">All vehicles (active &amp; historic)</option>
+                {% for v in all_vehicles %}
+                <option value="{{ v.id }}">{{ v.bus_number }}{% if v.route_label %} · {{ v.route_label }}{% endif %}{% if not v.is_active %} (Inactive){% endif %}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="trip-report-date" class="form-label small fw-semibold mb-1">3. Date (leave empty for all dates)</label>
+              <input type="date" id="trip-report-date" name="date" class="form-control form-control-sm" value="{% now 'Y-m-d' %}">
+            </div>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-sm-6">
+              <label for="trip-report-start" class="form-label small mb-1">From time (optional)</label>
+              <input type="time" id="trip-report-start" name="start" class="form-control form-control-sm">
+            </div>
+            <div class="col-sm-6">
+              <label for="trip-report-end" class="form-label small mb-1">To time (optional)</label>
+              <input type="time" id="trip-report-end" name="end" class="form-control form-control-sm">
+            </div>
+          </div>
+
+          <div class="mb-0 d-none" id="trip-report-interval-wrap">
+            <label for="trip-report-interval" class="form-label small fw-semibold mb-1">Checkpoint sampling</label>
+            <select id="trip-report-interval" name="interval" class="form-select form-select-sm">
+              {% for val, label in sampling_choices %}
+              <option value="{{ val }}" {% if val == 120 %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-footer vts-report-modal__footer">
+          <span class="small text-muted me-auto">Every PDF includes Purpose, Audience, Inputs, Outputs &amp; Environment.</span>
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-primary">
+            <svg class="vts-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/>
+              <path d="M14 3v5h5M12 12v5M9.5 14.5 12 17l2.5-2.5"/>
+            </svg>
+            <span>Download PDF</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block body_js %}
 <script src="{% static 'vendor/leaflet/leaflet.js' %}"></script>
 <script src="{% static 'js/vts-common.js' %}?v=vts-ui-15"></script>
-<script src="{% static 'js/trip-history.js' %}?v=vts-ui-15"></script>
+<script src="{% static 'js/trip-history.js' %}?v=vts-ui-20"></script>
 {% endblock %}

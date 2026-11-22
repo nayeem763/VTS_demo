@@ -170,14 +170,42 @@
     if (playBtn) playBtn.innerHTML = ICON_PLAY + "<span>Play</span>";
   }
 
-  function exportTripHistoryPdf() {
-    if (!tripHistoryPdfUrl) return;
-    const params = new URLSearchParams();
-    if (dateInput && dateInput.value) params.set("date", dateInput.value);
-    if (startTime && startTime.value) params.set("start", startTime.value);
-    if (endTime && endTime.value) params.set("end", endTime.value);
-    const query = params.toString();
-    window.location.assign(tripHistoryPdfUrl + (query ? "?" + query : ""));
+  function syncTripReportModal() {
+    const modalEl = document.getElementById("trip-report-modal");
+    const formEl = document.getElementById("trip-report-form");
+    if (!modalEl || !formEl) return;
+
+    const modalVehicle = document.getElementById("trip-report-vehicle");
+    const modalDate = document.getElementById("trip-report-date");
+    const modalStart = document.getElementById("trip-report-start");
+    const modalEnd = document.getElementById("trip-report-end");
+    const intervalWrap = document.getElementById("trip-report-interval-wrap");
+    const specBox = document.getElementById("trip-report-spec");
+    const typeRadios = Array.from(formEl.querySelectorAll('input[name="report_type"]'));
+
+    function updateTypeMeta() {
+      const active = typeRadios.find(function (r) { return r.checked; }) || typeRadios[0];
+      if (active && specBox) {
+        ["purpose", "audience", "outputs"].forEach(function (field) {
+          const target = specBox.querySelector('[data-spec-field="' + field + '"]');
+          if (target) target.textContent = active.dataset[field] || "";
+        });
+      }
+      if (intervalWrap) {
+        intervalWrap.classList.toggle("d-none", !(active && active.value === "telemetry_audit"));
+      }
+    }
+
+    modalEl.addEventListener("show.bs.modal", function () {
+      if (modalVehicle && vehicleSelect) modalVehicle.value = vehicleSelect.value || "";
+      if (modalDate && dateInput) modalDate.value = dateInput.value || "";
+      if (modalStart && startTime) modalStart.value = startTime.value || "";
+      if (modalEnd && endTime) modalEnd.value = endTime.value || "";
+      updateTypeMeta();
+    });
+
+    typeRadios.forEach(function (radio) { radio.addEventListener("change", updateTypeMeta); });
+    updateTypeMeta();
   }
 
   function togglePlayback() {
@@ -194,9 +222,9 @@
   }
 
   if (loadBtn) loadBtn.addEventListener("click", loadTrips);
-  if (exportPdfBtn) exportPdfBtn.addEventListener("click", exportTripHistoryPdf);
   if (playRange) playRange.addEventListener("input", function () { stopPlayback(); setCursor(parseInt(playRange.value, 10)); });
   if (playBtn) playBtn.addEventListener("click", togglePlayback);
 
+  syncTripReportModal();
   clearMap();
 })();

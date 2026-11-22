@@ -146,4 +146,50 @@
     new MutationObserver(syncDashboardUi).observe(vehicleListEl, { childList: true, subtree: true });
     syncDashboardUi();
   }
+
+  /* PDF Report Builder modal controls */
+  const reportForm = document.getElementById("fleet-report-form");
+  if (reportForm) {
+    const typeRadios = Array.from(reportForm.querySelectorAll('input[name="report_type"]'));
+    const specBox = document.getElementById("fleet-report-spec");
+    const presetSelect = document.getElementById("report-preset");
+    const customDatesWrap = document.getElementById("report-custom-dates");
+    const dateFromInput = document.getElementById("report-date-from");
+    const dateToInput = document.getElementById("report-date-to");
+    const scopeSelect = document.getElementById("report-vehicle-scope");
+    const singleWrap = document.getElementById("report-single-vehicle-wrap");
+    const vehicleInput = document.getElementById("report-vehicle");
+    const intervalWrap = document.getElementById("report-interval-wrap");
+
+    function syncReportForm() {
+      const active = typeRadios.find(function (r) { return r.checked; }) || typeRadios[0];
+      if (active && specBox) {
+        ["purpose", "audience", "outputs"].forEach(function (field) {
+          const target = specBox.querySelector('[data-spec-field="' + field + '"]');
+          if (target) target.textContent = active.dataset[field] || "";
+        });
+      }
+      if (intervalWrap) {
+        const isTelemetry = !!(active && active.value === "telemetry_audit");
+        intervalWrap.classList.toggle("d-none", !isTelemetry);
+      }
+      if (presetSelect && customDatesWrap) {
+        const isCustom = presetSelect.value === "custom";
+        customDatesWrap.classList.toggle("d-none", !isCustom);
+        if (dateFromInput) dateFromInput.disabled = !isCustom;
+        if (dateToInput) dateToInput.disabled = !isCustom;
+      }
+      if (scopeSelect && singleWrap && vehicleInput) {
+        const isSingle = scopeSelect.value === "single";
+        singleWrap.classList.toggle("d-none", !isSingle);
+        vehicleInput.disabled = !isSingle;
+        vehicleInput.required = isSingle;
+      }
+    }
+
+    typeRadios.forEach(function (radio) { radio.addEventListener("change", syncReportForm); });
+    if (presetSelect) presetSelect.addEventListener("change", syncReportForm);
+    if (scopeSelect) scopeSelect.addEventListener("change", syncReportForm);
+    syncReportForm();
+  }
 })();
