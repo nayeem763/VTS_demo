@@ -8,6 +8,9 @@ per vehicle at the database level.
 
 from __future__ import annotations
 
+from decimal import Decimal
+
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import Q
 
@@ -30,6 +33,76 @@ class Vehicle(models.Model):
 
     def __str__(self) -> str:
         return self.bus_number
+
+
+class BusRoute(models.Model):
+    """A fixed bus route, from its first stop to its final stop.
+
+    The route's road geometry is calculated by the map's routing provider from
+    these fixed waypoints.  Keeping the endpoints and intermediate stops in
+    our database makes the bus service configuration durable and auditable,
+    while avoiding a dependency on a provider-specific geometry format.
+    """
+
+    name = models.CharField(max_length=120, unique=True)
+    start_longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        validators=[MinValueValidator(Decimal("-180")), MaxValueValidator(Decimal("180"))],
+    )
+    start_latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        validators=[MinValueValidator(Decimal("-90")), MaxValueValidator(Decimal("90"))],
+    )
+    end_longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        validators=[MinValueValidator(Decimal("-180")), MaxValueValidator(Decimal("180"))],
+    )
+    end_latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        validators=[MinValueValidator(Decimal("-90")), MaxValueValidator(Decimal("90"))],
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class RouteStop(models.Model):
+    """One ordered intermediate stop on a :class:`BusRoute`."""
+
+    route = models.ForeignKey(BusRoute, on_delete=models.CASCADE, related_name="stops")
+    sequence = models.PositiveSmallIntegerField()
+    name = models.CharField(max_length=120)
+    longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        validators=[MinValueValidator(Decimal("-180")), MaxValueValidator(Decimal("180"))],
+    )
+    latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        validators=[MinValueValidator(Decimal("-90")), MaxValueValidator(Decimal("90"))],
+    )
+
+    class Meta:
+        ordering = ["sequence"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["route", "sequence"],
+                name="uniq_route_stop_sequence",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.route}: {self.sequence}. {self.name}"
 
 
 class DriverAssignment(models.Model):
