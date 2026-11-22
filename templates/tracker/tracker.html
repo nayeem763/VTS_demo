@@ -4,78 +4,85 @@
 {% block nav_tracker %}active{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-12 col-md-8 col-lg-6">
-    {% if assigned_vehicle %}
-      <div id="tracker"
-           data-endpoint="{% url 'api:location-create' %}"
-           data-interval="5000">
-        <div class="text-center mb-3">
-          <h1 class="h4 mb-0">{{ assigned_vehicle.bus_number }}</h1>
-          <div class="text-muted">{{ assigned_vehicle.route_label|default:"No route label" }}</div>
-        </div>
+<div class="vts-content-shell">
+  {% if assigned_vehicle %}
+    <section id="tracker" data-endpoint="{% url 'api:location-create' %}" data-interval="5000" aria-labelledby="tracker-title">
+      <header class="vts-page-heading">
+        <p class="vts-page-kicker">Driver console</p>
+        <h1 id="tracker-title">{{ assigned_vehicle.bus_number }}</h1>
+        <p class="vts-route-chip">{{ assigned_vehicle.route_label|default:"No route label" }}</p>
+      </header>
 
-        <div id="status-card" class="card shadow-sm mb-3">
-          <div class="card-body text-center">
-            <div class="text-uppercase small text-muted">Status</div>
-            <div id="tracker-state" class="h5 mb-3">Not sharing</div>
-            <button id="toggle-btn" type="button" class="btn btn-success tracker-power mx-auto d-block">
-              Start sharing
-            </button>
+      <div id="status-card" class="card tracker-stage">
+        <div class="card-body text-center">
+          <div class="tracker-power-wrap">
+            <button id="toggle-btn" type="button" class="btn btn-success tracker-power">Start sharing</button>
           </div>
-        </div>
-
-        <div id="tracker-error" class="alert alert-warning d-none" role="alert"></div>
-
-        <div class="card shadow-sm">
-          <div class="card-body">
-            <div class="row text-center g-3">
-              <div class="col-6">
-                <div class="small text-muted">Coordinates</div>
-                <div id="coords" class="tracker-metric">—</div>
-              </div>
-              <div class="col-6">
-                <div class="small text-muted">Accuracy</div>
-                <div id="accuracy" class="tracker-metric">—</div>
-              </div>
-              <div class="col-6">
-                <div class="small text-muted">Speed</div>
-                <div id="speed" class="tracker-metric">—</div>
-              </div>
-              <div class="col-6">
-                <div class="small text-muted">Last sent</div>
-                <div id="last-sent" class="tracker-metric">—</div>
-              </div>
-              <div class="col-12">
-                <div class="small text-muted">Fixes sent this session</div>
-                <div id="sent-count" class="tracker-metric">0</div>
-              </div>
-            </div>
+          <div class="tracker-state-header">
+            <span class="tracker-state-dot" aria-hidden="true"></span>
+            <span class="tracker-state-label">Location sharing</span>
           </div>
-        </div>
-
-        <p class="small text-muted mt-3 mb-0">
-          Keep this page open while driving. Your location is only shared while
-          sharing is on, and stops the moment you log out.
-        </p>
-      </div>
-    {% else %}
-      <div class="card border-warning shadow-sm mt-4">
-        <div class="card-body text-center p-4">
-          <div class="display-6 mb-2" aria-hidden="true">🚐</div>
-          <h1 class="h4">No vehicle assigned</h1>
-          <p class="text-muted mb-0">
-            You are not currently assigned to a vehicle. Please contact your
-            administrator to be assigned before you can share your location.
-          </p>
+          <div id="tracker-state" aria-live="polite">Not sharing</div>
+          <p class="tracker-hint">Tap the button to start or stop broadcasting your bus position.</p>
         </div>
       </div>
-    {% endif %}
-  </div>
+
+      <div id="tracker-error" class="alert alert-warning d-none mt-3" role="alert"></div>
+
+      <section class="card tracker-metrics-card" aria-label="Location details">
+        <dl class="tracker-metrics">
+          <div>
+            <dt>Coordinates</dt>
+            <dd id="coords">—</dd>
+          </div>
+          <div>
+            <dt>Accuracy</dt>
+            <dd id="accuracy">—</dd>
+          </div>
+          <div>
+            <dt>Speed</dt>
+            <dd id="speed">—</dd>
+          </div>
+          <div>
+            <dt>Last sent</dt>
+            <dd id="last-sent">—</dd>
+          </div>
+          <div>
+            <dt>Fixes sent this session</dt>
+            <dd id="sent-count">0</dd>
+          </div>
+        </dl>
+      </section>
+
+      <p class="tracker-safety-note">
+        <svg class="vts-ui-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M12 16v-4M12 8h.01"/>
+        </svg>
+        <span>Keep this page open while driving. Your location is shared only while sharing is on and stops immediately when you log out.</span>
+      </p>
+    </section>
+  {% else %}
+    <section class="card vts-empty-state" aria-labelledby="no-vehicle-title">
+      <div class="card-body">
+        <div class="vts-empty-symbol" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="3.5" width="16" height="13.5" rx="3"/>
+            <path d="M4 11h16M7.5 17v3M16.5 17v3"/>
+            <circle cx="8.25" cy="14" r=".75" fill="currentColor" stroke="none"/>
+            <circle cx="15.75" cy="14" r=".75" fill="currentColor" stroke="none"/>
+          </svg>
+        </div>
+        <p class="vts-auth-kicker">Vehicle assignment</p>
+        <h1 id="no-vehicle-title">No vehicle assigned</h1>
+        <p class="text-muted mb-0">You are not currently assigned to a vehicle. Contact an administrator before sharing your location.</p>
+      </div>
+    </section>
+  {% endif %}
 </div>
 {% endblock %}
 
 {% block body_js %}
-<script src="{% static 'js/vts-common.js' %}"></script>
-<script src="{% static 'js/tracker.js' %}"></script>
+<script src="{% static 'js/vts-common.js' %}?v=vts-ui-7"></script>
+<script src="{% static 'js/tracker.js' %}?v=vts-ui-7"></script>
 {% endblock %}
