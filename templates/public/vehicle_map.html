@@ -5,274 +5,138 @@
 {% block main_class %}d-flex flex-column p-0{% endblock %}
 
 {% block content %}
-<style>
-  /* ---------- Scoped design tokens (only inside .vts-split) ---------- */
-  .vts-split {
-    --vts-ink: #12303b;
-    --vts-ink-soft: #5b727a;
-    --vts-teal: #0f766e;
-    --vts-teal-deep: #0b4f4a;
-    --vts-mint: #e6f4f1;
-    --vts-paper: #f7faf9;
-    --vts-line: #dde7e5;
-    --vts-live: #f5a524;
-    --vts-radius: 12px;
-  }
-
-  /* ---------- Side panel ---------- */
-  .vts-split .vts-side {
-    background: var(--vts-paper);
-    color: var(--vts-ink);
-    border-left: 1px solid var(--vts-line);
-    box-shadow: -8px 0 24px rgba(18, 48, 59, .06);
-  }
-
-  .vts-head {
-    position: sticky;
-    top: 0;
-    z-index: 5;
-    padding: 1rem 1rem .85rem;
-    color: #fff;
-    background:
-      radial-gradient(120% 140% at 100% 0%, rgba(245, 165, 36, .22) 0%, transparent 55%),
-      linear-gradient(135deg, var(--vts-teal-deep), var(--vts-teal));
-  }
-  .vts-head-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: .75rem;
-  }
-  .vts-head h1 {
-    margin: 0;
-    font-size: 1.05rem;
-    font-weight: 700;
-    letter-spacing: .01em;
-    color: #fff;
-  }
-  .vts-head p {
-    margin: .2rem 0 0;
-    font-size: .78rem;
-    color: rgba(255, 255, 255, .78);
-  }
-
-  /* Live badge */
-  .vts-live {
-    display: inline-flex;
-    align-items: center;
-    gap: .4rem;
-    padding: .22rem .6rem;
-    font-size: .72rem;
-    font-weight: 600;
-    color: #fff;
-    background: rgba(255, 255, 255, .14);
-    border: 1px solid rgba(255, 255, 255, .28);
-    border-radius: 999px;
-    backdrop-filter: blur(4px);
-  }
-  .vts-live-dot {
-    position: relative;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--vts-live);
-  }
-  .vts-live-dot::after {
-    content: "";
-    position: absolute;
-    inset: -4px;
-    border-radius: 50%;
-    border: 2px solid var(--vts-live);
-    opacity: 0;
-    animation: vts-pulse 1.8s ease-out infinite;
-  }
-  @keyframes vts-pulse {
-    0%   { transform: scale(.5); opacity: .9; }
-    100% { transform: scale(1.6); opacity: 0; }
-  }
-
-  /* Status line (text is filled by public-map.js) */
-  .vts-head #map-status {
-    display: inline-block;
-    margin-top: .65rem;
-    padding: .18rem .6rem;
-    font-size: .74rem;
-    color: var(--vts-ink) !important;
-    background: #fff;
-    border-radius: 999px;
-  }
-
-  /* Search */
-  .vts-search {
-    position: relative;
-    padding: .75rem 1rem;
-    background: var(--vts-paper);
-    border-bottom: 1px solid var(--vts-line);
-  }
-  .vts-search svg {
-    position: absolute;
-    left: 1.75rem;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 16px;
-    height: 16px;
-    color: var(--vts-ink-soft);
-    pointer-events: none;
-  }
-  .vts-search input {
-    width: 100%;
-    padding: .55rem .9rem .55rem 2.2rem;
-    font-size: .88rem;
-    color: var(--vts-ink);
-    background: #fff;
-    border: 1px solid var(--vts-line);
-    border-radius: 10px;
-    outline: none;
-    transition: border-color .15s, box-shadow .15s;
-  }
-  .vts-search input::placeholder { color: #8aa0a7; }
-  .vts-search input:focus {
-    border-color: var(--vts-teal);
-    box-shadow: 0 0 0 3px rgba(15, 118, 110, .16);
-  }
-
-  /* Vehicle list items (markup comes from JS, so styled generically) */
-  .vts-split #vehicle-list > *:not(.text-center) {
-    padding: .85rem 1rem;
-    background: #fff;
-    border-bottom: 1px solid var(--vts-line);
-    border-left: 3px solid transparent;
-    cursor: pointer;
-    transition: background-color .15s, border-left-color .15s, transform .15s;
-  }
-  .vts-split #vehicle-list > *:not(.text-center):hover {
-    background: var(--vts-mint);
-    border-left-color: var(--vts-teal);
-  }
-  .vts-split #vehicle-list > *:not(.text-center):active {
-    transform: scale(.995);
-  }
-  .vts-split #vehicle-list > *:not(.text-center):focus-visible {
-    outline: 2px solid var(--vts-teal);
-    outline-offset: -2px;
-  }
-  .vts-split #vehicle-list .badge {
-    border-radius: 999px;
-    font-weight: 600;
-  }
-
-  .vts-empty {
-    display: none;
-    padding: 2rem 1rem;
-    text-align: center;
-    font-size: .85rem;
-    color: var(--vts-ink-soft);
-  }
-
-  /* ---------- Map ---------- */
-  .vts-split .vts-map {
-    background: #dfeeee;
-  }
-  .vts-split .leaflet-control-zoom {
-    border: 0 !important;
-    border-radius: var(--vts-radius);
-    overflow: hidden;
-    box-shadow: 0 6px 18px rgba(18, 48, 59, .22);
-  }
-  .vts-split .leaflet-control-zoom a {
-    width: 36px;
-    height: 36px;
-    line-height: 36px;
-    color: var(--vts-teal-deep);
-    background: #fff;
-    border-bottom: 1px solid var(--vts-line);
-    transition: background-color .15s, color .15s;
-  }
-  .vts-split .leaflet-control-zoom a:hover {
-    color: #fff;
-    background: var(--vts-teal);
-  }
-  .vts-split .leaflet-popup-content-wrapper {
-    color: var(--vts-ink);
-    border-radius: var(--vts-radius);
-    box-shadow: 0 10px 28px rgba(18, 48, 59, .28);
-  }
-  .vts-split .leaflet-popup-content {
-    margin: .8rem 1rem;
-    line-height: 1.45;
-  }
-  .vts-split .leaflet-popup-tip {
-    box-shadow: 0 10px 28px rgba(18, 48, 59, .2);
-  }
-  .vts-split .leaflet-control-attribution {
-    font-size: 10px;
-    background: rgba(255, 255, 255, .8);
-    border-radius: 8px 0 0 0;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .vts-live-dot::after { animation: none; }
-    .vts-split #vehicle-list > * { transition: none; }
-  }
-</style>
-
 <div class="vts-split">
   <div id="map" class="vts-map"
        data-endpoint="{% url 'api:vehicle-latest-locations' %}"
        data-poll="8000"
+       data-routing-url="{{ routing_service_url }}"
        data-center-lat="22.4716" data-center-lng="91.7876" data-zoom="14"></div>
-  <aside class="vts-side">
-    <div class="vts-head">
-      <div class="vts-head-top">
-        <h1>Live vehicles</h1>
-        <span class="vts-live"><span class="vts-live-dot"></span>Live</span>
+
+  <div class="vts-side-shell">
+    <button type="button" class="vts-collapse-tab" data-side-toggle
+            aria-expanded="true" aria-controls="public-side-panel"
+            aria-label="Collapse side panel" title="Collapse side panel">
+      <svg class="vts-tab-outline" width="11" height="80" viewBox="0 0 11 80" fill="none" aria-hidden="true">
+        <path d="M10.5 0 C10.5 5.5 7.5 8 5 8 C2.2 8 0.5 9.8 0.5 13 L0.5 67 C0.5 70.2 2.2 72 5 72 C7.5 72 10.5 74.5 10.5 80" stroke="currentColor" stroke-width="1"/>
+      </svg>
+      <svg class="vts-tab-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="m9 18 6-6-6-6"/>
+      </svg>
+    </button>
+
+    <aside class="vts-side" id="public-side-panel" aria-label="Live vehicle controls">
+      <nav class="vts-side-rail" aria-label="Collapsed map shortcuts">
+        <button type="button" class="vts-rail-btn vts-rail-btn--expand" data-side-toggle
+                aria-label="Expand side panel" title="Expand panel">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m15 18-6-6 6-6"/>
+          </svg>
+        </button>
+        <span class="vts-rail-divider" aria-hidden="true"></span>
+        <button type="button" class="vts-rail-btn is-active" data-rail-open="list"
+                aria-label="Show live vehicles" title="Live vehicles">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="4" y="4" width="16" height="12" rx="2.5"/>
+            <path d="M4 11h16M7 16v2.5M17 16v2.5"/>
+          </svg>
+          <span class="vts-rail-label">Live</span>
+        </button>
+        <button type="button" class="vts-rail-btn" data-rail-open="search"
+                aria-label="Search vehicles" title="Search vehicles">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/>
+            <path d="m20 20-3.5-3.5"/>
+          </svg>
+          <span class="vts-rail-label">Search</span>
+        </button>
+        <button type="button" class="vts-rail-btn" data-rail-open="planner"
+                aria-label="Open road route planner" title="Plan a road route">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+          </svg>
+          <span class="vts-rail-label">Route</span>
+        </button>
+      </nav>
+
+      <header class="vts-panel-header">
+      <div class="vts-panel-top">
+        <div>
+          <p class="vts-panel-eyebrow">Campus transport</p>
+          <h1 class="vts-panel-title">Live vehicles</h1>
+        </div>
+        <span class="vts-live-indicator">Live</span>
       </div>
-      <p>See where each campus vehicle is right now.</p>
-      <div id="map-status" class="small text-muted">Loading…</div>
-    </div>
+      <p class="vts-panel-copy">Real-time locations reported by active campus vehicles.</p>
+      <div id="map-status" class="vts-status-bar" role="status" aria-live="polite">Loading fleet…</div>
+    </header>
 
     <div class="vts-search">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input id="vts-filter" type="search" placeholder="Search by name or plate" autocomplete="off" aria-label="Search vehicles">
+      <svg class="vts-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/>
+        <path d="m20 20-3.5-3.5"/>
+      </svg>
+      <label class="visually-hidden" for="vts-filter">Search vehicles</label>
+      <input id="vts-filter" class="form-control form-control-sm" type="search" placeholder="Search by bus or route…" autocomplete="off">
     </div>
 
-    <div id="vehicle-list">
-      <div class="p-4 text-center text-muted small">Loading…</div>
+    <div class="vts-controls vts-controls--compact">
+      <details class="vts-route-planner" id="route-planner">
+        <summary>
+          <span class="vts-summary-label">
+            <svg class="vts-ui-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="6" cy="19" r="2.5"/>
+              <circle cx="18" cy="5" r="2.5"/>
+              <path d="M8.5 19H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/>
+            </svg>
+            <span>Plan a road route</span>
+          </span>
+          <svg class="vts-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m6 9 6 6 6-6"/>
+          </svg>
+        </summary>
+        <div class="vts-route-planner__body">
+          <p>Enter coordinates as <code>latitude, longitude</code> to draw a route along the road network.</p>
+          <label class="form-label vts-coord-label" for="route-source">
+            <span class="vts-dot vts-dot--start" aria-hidden="true"></span>Starting point
+          </label>
+          <input id="route-source" class="form-control form-control-sm route-coordinate-input" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" list="route-coordinate-options" placeholder="22.470680, 91.794230">
+          <label class="form-label vts-coord-label mt-2" for="route-destination">
+            <span class="vts-dot vts-dot--end" aria-hidden="true"></span>Destination
+          </label>
+          <input id="route-destination" class="form-control form-control-sm route-coordinate-input" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" list="route-coordinate-options" placeholder="22.471600, 91.787600">
+          <datalist id="route-coordinate-options">
+            <option value="22.470680, 91.794230">Chittagong University Railway Station</option>
+            <option value="22.471600, 91.787600">Chittagong University</option>
+          </datalist>
+          <div class="vts-route-actions">
+            <button id="draw-route" class="btn btn-sm btn-primary" type="button">Show driving route</button>
+            <button id="clear-route" class="btn btn-sm btn-outline-secondary" type="button">Clear</button>
+          </div>
+          <div id="route-status" class="mt-2" role="status" aria-live="polite"></div>
+        </div>
+      </details>
     </div>
-    <div id="vts-empty" class="vts-empty">No vehicle matches your search.</div>
-  </aside>
+
+    <div class="vts-side-scroll">
+      <div id="vehicle-list" aria-live="polite">
+        <div class="vts-list-placeholder">Loading vehicles…</div>
+      </div>
+      <div id="vts-empty" class="vts-empty">
+        <svg class="vts-empty-inline-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"/>
+          <path d="m20 20-3.5-3.5"/>
+          <path d="M8.5 11h5"/>
+        </svg>
+        <p class="mb-0">No vehicle matches this search.</p>
+      </div>
+    </div>
+    </aside>
+  </div>
 </div>
-
-{# Optional: client-side list filter. Reads the list only; never changes data or JS files. #}
-<script>
-(function () {
-  var input = document.getElementById('vts-filter');
-  var list  = document.getElementById('vehicle-list');
-  var empty = document.getElementById('vts-empty');
-  if (!input || !list) return;
-
-  function apply() {
-    var q = input.value.trim().toLowerCase();
-    var shown = 0, total = 0;
-    Array.prototype.forEach.call(list.children, function (el) {
-      if (el.classList.contains('text-center')) return;   // skip loading/empty placeholder
-      total++;
-      var hit = !q || el.textContent.toLowerCase().indexOf(q) !== -1;
-      el.style.display = hit ? '' : 'none';
-      if (hit) shown++;
-    });
-    empty.style.display = (q && total && !shown) ? 'block' : 'none';
-  }
-
-  input.addEventListener('input', apply);
-  // Re-apply after each poll re-renders the list.
-  new MutationObserver(apply).observe(list, { childList: true });
-})();
-</script>
 {% endblock %}
 
 {% block body_js %}
 <script src="{% static 'vendor/leaflet/leaflet.js' %}"></script>
-<script src="{% static 'js/vts-common.js' %}"></script>
-<script src="{% static 'js/public-map.js' %}"></script>
+<script src="{% static 'js/vts-common.js' %}?v=vts-ui-15"></script>
+<script src="{% static 'js/public-map.js' %}?v=vts-ui-7"></script>
 {% endblock %}
