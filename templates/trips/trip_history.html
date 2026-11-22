@@ -8,55 +8,131 @@
 <div class="vts-split">
   <div id="history-map" class="vts-map"
        data-trips-url="{% url 'api:trip-list' %}"
+       data-trip-history-pdf-url="{% url 'web:trip_history_pdf' %}"
        data-center-lat="22.4716" data-center-lng="91.7876" data-zoom="14"></div>
-  <aside class="vts-side">
-    <div class="p-3 border-bottom">
-      <h1 class="h6 mb-2">Trip history</h1>
-      <div class="mb-2">
-        <label for="vehicle-select" class="form-label small mb-1">Vehicle</label>
-        <select id="vehicle-select" class="form-select form-select-sm">
-          <option value="">Choose a vehicle…</option>
-          {% for vehicle in vehicles %}
-            <option value="{{ vehicle.id }}">{{ vehicle.bus_number }}{% if vehicle.route_label %} · {{ vehicle.route_label }}{% endif %}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="mb-2">
-        <label for="date-input" class="form-label small mb-1">Date</label>
-        <input type="date" id="date-input" class="form-control form-control-sm" value="{% now 'Y-m-d' %}">
-      </div>
-      <div class="row g-2 mb-2">
-        <div class="col-6">
-          <label for="start-time" class="form-label small mb-1">From</label>
+
+  <div class="vts-side-shell">
+    <button type="button" class="vts-collapse-tab" data-side-toggle
+            aria-expanded="true" aria-controls="history-side-panel"
+            aria-label="Collapse side panel" title="Collapse side panel">
+      <svg class="vts-tab-outline" width="11" height="80" viewBox="0 0 11 80" fill="none" aria-hidden="true">
+        <path d="M10.5 0 C10.5 5.5 7.5 8 5 8 C2.2 8 0.5 9.8 0.5 13 L0.5 67 C0.5 70.2 2.2 72 5 72 C7.5 72 10.5 74.5 10.5 80" stroke="currentColor" stroke-width="1"/>
+      </svg>
+      <svg class="vts-tab-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="m9 18 6-6-6-6"/>
+      </svg>
+    </button>
+
+    <aside class="vts-side" id="history-side-panel" aria-label="Trip history controls">
+      <nav class="vts-side-rail" aria-label="Collapsed trip history shortcuts">
+        <button type="button" class="vts-rail-btn vts-rail-btn--expand" data-side-toggle
+                aria-label="Expand side panel" title="Expand panel">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m15 18-6-6 6-6"/>
+          </svg>
+        </button>
+        <span class="vts-rail-divider" aria-hidden="true"></span>
+        <button type="button" class="vts-rail-btn is-active" data-rail-open="filters"
+                aria-label="Open trip filters" title="Filter trips">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="4" y1="6" x2="20" y2="6"/>
+            <line x1="7" y1="12" x2="17" y2="12"/>
+            <line x1="10" y1="18" x2="14" y2="18"/>
+          </svg>
+          <span class="vts-rail-label">Filter</span>
+        </button>
+        <button type="button" class="vts-rail-btn" data-rail-open="trips"
+                aria-label="Open recorded trips" title="Trip list">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.5"/>
+            <path d="M12 7.5V12l3 2"/>
+          </svg>
+          <span class="vts-rail-label">Trips</span>
+        </button>
+        <button type="button" class="vts-rail-btn" data-rail-open="playback"
+                aria-label="Open playback controls" title="Playback">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="7 5 19 12 7 19 7 5"/>
+          </svg>
+          <span class="vts-rail-label">Replay</span>
+        </button>
+      </nav>
+
+      <header class="vts-panel-header">
+      <p class="vts-panel-eyebrow">Operations archive</p>
+      <h1 class="vts-panel-title">Trip history</h1>
+      <p class="vts-panel-copy">Choose a vehicle and date to review a recorded journey on the map.</p>
+    </header>
+
+    <div class="vts-controls vts-controls--bordered">
+      <div class="trip-filter-grid">
+        <div class="vts-field vts-field--wide">
+          <label for="vehicle-select">Vehicle</label>
+          <select id="vehicle-select" class="form-select form-select-sm">
+            <option value="">Choose a vehicle…</option>
+            {% for vehicle in vehicles %}
+              <option value="{{ vehicle.id }}">{{ vehicle.bus_number }}{% if vehicle.route_label %} · {{ vehicle.route_label }}{% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="vts-field vts-field--wide">
+          <label for="date-input">Date</label>
+          <input type="date" id="date-input" class="form-control form-control-sm" value="{% now 'Y-m-d' %}">
+        </div>
+        <div class="vts-field">
+          <label for="start-time">From</label>
           <input type="time" id="start-time" class="form-control form-control-sm">
         </div>
-        <div class="col-6">
-          <label for="end-time" class="form-label small mb-1">To</label>
+        <div class="vts-field">
+          <label for="end-time">To</label>
           <input type="time" id="end-time" class="form-control form-control-sm">
         </div>
       </div>
-      <button id="load-trips" type="button" class="btn btn-primary btn-sm w-100">Load trips</button>
-      <div id="history-error" class="alert alert-warning small mt-2 mb-0 d-none" role="alert"></div>
-    </div>
 
-    <div id="trip-list" class="flex-grow-1 overflow-auto">
-      <div class="p-4 text-center text-muted small">Choose a vehicle and date, then load trips.</div>
-    </div>
-
-    <div class="p-3 border-top">
-      <div class="d-flex align-items-center gap-2">
-        <button id="play-btn" type="button" class="btn btn-outline-secondary btn-sm" disabled>▶ Play</button>
-        <input type="range" id="playback-range" class="form-range flex-grow-1" min="0" max="0" value="0" disabled
-               aria-label="Trip playback position">
+      <div class="vts-filter-actions">
+        <button id="load-trips" type="button" class="btn btn-primary btn-sm">
+          <svg class="vts-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/>
+            <path d="m20 20-3.5-3.5"/>
+          </svg>
+          <span>Load trips</span>
+        </button>
+        <button id="export-trip-history" type="button" class="btn btn-outline-primary btn-sm">
+          <svg class="vts-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/>
+            <path d="M14 3v5h5M12 12v5M9.5 14.5 12 17l2.5-2.5"/>
+          </svg>
+          <span>Export PDF for all vehicles</span>
+        </button>
       </div>
-      <div id="play-info" class="small text-muted mt-1">Select a trip to replay its route.</div>
+      <p class="vts-filter-hint">The PDF applies the selected date and time range to every vehicle, then includes a combined timeline.</p>
+      <div id="history-error" class="alert alert-warning small mt-3 mb-0 d-none" role="alert"></div>
     </div>
-  </aside>
+
+    <div id="trip-list" class="vts-side-scroll" aria-live="polite">
+      <div class="vts-list-placeholder">Choose a vehicle and date, then load trips.</div>
+    </div>
+
+    <div class="vts-side-footer">
+      <div class="vts-playback-row">
+        <button id="play-btn" type="button" class="btn btn-outline-secondary btn-sm vts-play-btn" disabled>
+          <svg class="vts-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="7 5 19 12 7 19 7 5" fill="currentColor" stroke="none"/>
+          </svg>
+          <span>Play</span>
+        </button>
+        <label class="visually-hidden" for="playback-range">Trip playback position</label>
+        <input type="range" id="playback-range" class="form-range" min="0" max="0" value="0" disabled>
+      </div>
+      <div id="play-info">Select a trip to replay its route.</div>
+    </div>
+    </aside>
+  </div>
 </div>
 {% endblock %}
 
 {% block body_js %}
 <script src="{% static 'vendor/leaflet/leaflet.js' %}"></script>
-<script src="{% static 'js/vts-common.js' %}"></script>
-<script src="{% static 'js/trip-history.js' %}"></script>
+<script src="{% static 'js/vts-common.js' %}?v=vts-ui-15"></script>
+<script src="{% static 'js/trip-history.js' %}?v=vts-ui-15"></script>
 {% endblock %}

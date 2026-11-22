@@ -1,11 +1,16 @@
-/* Admin trip history: pick a vehicle + date, list that day's trips, then draw a
-   selected trip as a polyline with a scrubber/playback cursor. */
+/* Admin trip history: pick a vehicle + date, list that day's trips, then
+   replay the selected trip with a scrubber/playback cursor. */
 "use strict";
 (function () {
   const mapEl = document.getElementById("history-map");
   if (!mapEl) return;
 
+  const ICON_USER = '<svg class="vts-inline-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 19.5a7 7 0 0 1 14 0"/></svg>';
+  const ICON_PLAY = '<svg class="vts-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="7 5 19 12 7 19 7 5" fill="currentColor" stroke="none"/></svg>';
+  const ICON_PAUSE = '<svg class="vts-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none"/></svg>';
+
   const tripsUrl = mapEl.dataset.tripsUrl; // /api/v1/trips/
+  const tripHistoryPdfUrl = mapEl.dataset.tripHistoryPdfUrl;
   const center = [parseFloat(mapEl.dataset.centerLat), parseFloat(mapEl.dataset.centerLng)];
   const zoom = parseInt(mapEl.dataset.zoom || "13", 10);
 
@@ -14,6 +19,7 @@
   const startTime = document.getElementById("start-time");
   const endTime = document.getElementById("end-time");
   const loadBtn = document.getElementById("load-trips");
+  const exportPdfBtn = document.getElementById("export-trip-history");
   const tripListEl = document.getElementById("trip-list");
   const playRange = document.getElementById("playback-range");
   const playBtn = document.getElementById("play-btn");
@@ -68,7 +74,7 @@
   function renderTripList(trips) {
     if (!tripListEl) return;
     if (!trips.length) {
-      tripListEl.innerHTML = '<div class="p-3 text-center text-muted small">No trips found for that day.</div>';
+      tripListEl.innerHTML = '<div class="vts-list-placeholder">No trips found for that day.</div>';
       return;
     }
     const html = trips
@@ -76,14 +82,15 @@
         const span = VTS.fmtTime(t.started_at) + " – " + (t.ended_at ? VTS.fmtTime(t.ended_at) : "ongoing");
         const isOpen = String(t.status || "").toUpperCase() === "OPEN";
         const badge = isOpen
-          ? '<span class="badge text-bg-success">open</span>'
-          : '<span class="badge text-bg-secondary">done</span>';
+          ? '<span class="status-badge is-live">Open</span>'
+          : '<span class="status-badge is-offline">Done</span>';
         return (
-          '<button type="button" class="list-group-item list-group-item-action" data-id="' + t.id + '">' +
-          '<div class="d-flex justify-content-between align-items-center">' +
-          "<span class=\"fw-semibold\">Trip #" + t.id + "</span>" + badge + "</div>" +
-          '<div class="small text-muted">' + VTS.escapeHtml(span) + "</div>" +
-          (t.driver_name ? '<div class="small text-muted">👤 ' + VTS.escapeHtml(t.driver_name) + "</div>" : "") +
+          '<button type="button" class="list-group-item list-group-item-action vts-trip-item" data-id="' + t.id + '">' +
+            '<div class="d-flex justify-content-between align-items-center gap-2">' +
+              '<span class="vts-trip-title">Trip #' + t.id + "</span>" + badge +
+            "</div>" +
+            '<div class="vts-trip-span">' + VTS.escapeHtml(span) + "</div>" +
+            (t.driver_name ? '<div class="vts-meta-inline">' + ICON_USER + "<span>" + VTS.escapeHtml(t.driver_name) + "</span></div>" : "") +
           "</button>"
         );
       })
@@ -130,12 +137,11 @@
       return;
     }
     const latlngs = points.map(function (p) { return p.latlng; });
-    const line = L.polyline(latlngs, { color: "#0d6efd", weight: 4, opacity: 0.85 }).addTo(map);
-    const startDot = L.circleMarker(latlngs[0], { radius: 6, color: "#198754", fillColor: "#198754", fillOpacity: 1 }).addTo(map).bindTooltip("Start");
-    const endDot = L.circleMarker(latlngs[latlngs.length - 1], { radius: 6, color: "#dc3545", fillColor: "#dc3545", fillOpacity: 1 }).addTo(map).bindTooltip("End");
+    const startDot = L.circleMarker(latlngs[0], { radius: 7, color: "#ffffff", fillColor: "#1E8E3E", fillOpacity: 1, weight: 2.5 }).addTo(map).bindTooltip("Start");
+    const endDot = L.circleMarker(latlngs[latlngs.length - 1], { radius: 7, color: "#ffffff", fillColor: "#EA4335", fillOpacity: 1, weight: 2.5 }).addTo(map).bindTooltip("End");
     cursor = L.marker(latlngs[0], { icon: VTS.markerIcon("live") }).addTo(map);
-    layers.push(line, startDot, endDot, cursor);
-    map.fitBounds(line.getBounds(), { padding: [40, 40] });
+    layers.push(startDot, endDot, cursor);
+    map.fitBounds(L.latLngBounds(latlngs), { padding: [40, 40] });
 
     if (playRange) {
       playRange.max = String(points.length - 1);
@@ -161,7 +167,17 @@
 
   function stopPlayback() {
     if (playTimer != null) { clearInterval(playTimer); playTimer = null; }
-    if (playBtn) playBtn.textContent = "▶ Play";
+    if (playBtn) playBtn.innerHTML = ICON_PLAY + "<span>Play</span>";
+  }
+
+  function exportTripHistoryPdf() {
+    if (!tripHistoryPdfUrl) return;
+    const params = new URLSearchParams();
+    if (dateInput && dateInput.value) params.set("date", dateInput.value);
+    if (startTime && startTime.value) params.set("start", startTime.value);
+    if (endTime && endTime.value) params.set("end", endTime.value);
+    const query = params.toString();
+    window.location.assign(tripHistoryPdfUrl + (query ? "?" + query : ""));
   }
 
   function togglePlayback() {
@@ -169,7 +185,7 @@
     if (!points.length) return;
     let i = playRange ? parseInt(playRange.value, 10) : 0;
     if (i >= points.length - 1) i = 0; // restart from beginning
-    if (playBtn) playBtn.textContent = "⏸ Pause";
+    if (playBtn) playBtn.innerHTML = ICON_PAUSE + "<span>Pause</span>";
     playTimer = setInterval(function () {
       if (i >= points.length - 1) { setCursor(points.length - 1); stopPlayback(); return; }
       i += 1;
@@ -178,6 +194,7 @@
   }
 
   if (loadBtn) loadBtn.addEventListener("click", loadTrips);
+  if (exportPdfBtn) exportPdfBtn.addEventListener("click", exportTripHistoryPdf);
   if (playRange) playRange.addEventListener("input", function () { stopPlayback(); setCursor(parseInt(playRange.value, 10)); });
   if (playBtn) playBtn.addEventListener("click", togglePlayback);
 
