@@ -44,6 +44,8 @@ def validate_capture_timestamp(captured_at: datetime, *, now: datetime | None = 
     """Reject fixes from the far future (clock skew/spoofing) or the distant past."""
     if captured_at is None:
         raise ValidationError({"captured_at": "Capture time is required."})
+    if timezone.is_naive(captured_at):
+        raise ValidationError({"captured_at": "Capture time must be timezone-aware."})
     now = now or timezone.now()
     future_skew = timedelta(seconds=settings.LOCATION_MAX_FUTURE_SKEW_SECONDS)
     max_age = timedelta(seconds=settings.LOCATION_MAX_AGE_SECONDS)

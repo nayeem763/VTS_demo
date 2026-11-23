@@ -109,8 +109,14 @@ class FleetRecordReportView(AdminRequiredMixin, View):
             date_from = today - timedelta(days=29)
             date_to = today
         elif preset in ("all", "custom"):
-            date_from = parse_date(date_from_raw) if date_from_raw else None
-            date_to = parse_date(date_to_raw) if date_to_raw else None
+            try:
+                date_from = parse_date(date_from_raw) if date_from_raw else None
+            except ValueError:
+                date_from = None
+            try:
+                date_to = parse_date(date_to_raw) if date_to_raw else None
+            except ValueError:
+                date_to = None
             if date_from_raw and date_from is None:
                 return {}, "date_from must be YYYY-MM-DD."
             if date_to_raw and date_to is None:
@@ -236,7 +242,10 @@ class TripHistoryReportView(AdminRequiredMixin, View):
         date_value = request.GET.get("date", "")
         start_value = request.GET.get("start", "")
         end_value = request.GET.get("end", "")
-        on_date = parse_date(date_value) if date_value else None
+        try:
+            on_date = parse_date(date_value) if date_value else None
+        except ValueError:
+            on_date = None
         if date_value and on_date is None:
             return None, None, None, "date must be YYYY-MM-DD."
         if (start_value or end_value) and on_date is None:

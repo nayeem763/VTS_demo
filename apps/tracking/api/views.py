@@ -28,6 +28,7 @@ from ..selectors import (
     get_latest_active_vehicle_locations,
     get_latest_vehicle_location,
     get_location_trajectory,
+    get_trajectories_for_locations,
     get_trip_points,
     get_vehicle_trips,
 )
@@ -105,14 +106,18 @@ class LatestActiveVehicleLocationsView(APIView):
 
     def get(self, request: Request) -> Response:
         now = timezone.now()
+        pairs = get_latest_active_vehicle_locations()
+        trajectories = get_trajectories_for_locations(
+            [location for _, location in pairs if location is not None]
+        )
         snapshots = [
             VehicleSnapshot(
                 vehicle=vehicle,
                 location=location,
                 now=now,
-                trajectory=get_location_trajectory(location),
+                trajectory=trajectories.get(location.trip_id, []) if location is not None else [],
             )
-            for vehicle, location in get_latest_active_vehicle_locations()
+            for vehicle, location in pairs
         ]
         serializer_cls = _location_serializer_for(request)
         data = serializer_cls(snapshots, many=True).data
@@ -183,7 +188,10 @@ class TripListView(APIView):
         on_date = None
         date_param = request.query_params.get("date")
         if date_param:
-            on_date = parse_date(date_param)
+            try:
+                on_date = parse_date(date_param)
+            except ValueError:
+                on_date = None
             if on_date is None:
                 return Response(
                     {"detail": "date must be YYYY-MM-DD."},
