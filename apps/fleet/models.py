@@ -22,8 +22,11 @@ class Vehicle(models.Model):
 
     bus_number = models.CharField(max_length=32, unique=True)
     registration_number = models.CharField(max_length=64, unique=True, null=True, blank=True)
-    # Descriptive metadata only. Dynamic route management is out of MVP scope.
+    # Descriptive metadata shown to riders and admins on the live map.
     route_label = models.CharField(max_length=120, blank=True)
+    # Internal short note visible ONLY to admins (e.g., when assigning drivers).
+    # Never exposed in public API responses, public maps, or driver views.
+    admin_description = models.CharField(max_length=280, blank=True, default="")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

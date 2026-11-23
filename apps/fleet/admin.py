@@ -20,9 +20,16 @@ from .services import deactivate_vehicle, end_assignment
 
 @admin.register(Vehicle)
 class VehicleAdmin(admin.ModelAdmin):
-    list_display = ("bus_number", "registration_number", "route_label", "is_active", "updated_at")
+    list_display = (
+        "bus_number",
+        "registration_number",
+        "route_label",
+        "admin_description",
+        "is_active",
+        "updated_at",
+    )
     list_filter = ("is_active",)
-    search_fields = ("bus_number", "registration_number", "route_label")
+    search_fields = ("bus_number", "registration_number", "route_label", "admin_description")
     readonly_fields = ("created_at", "updated_at")
     actions = (
         "action_generate_fleet_record",
