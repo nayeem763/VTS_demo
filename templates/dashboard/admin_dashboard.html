@@ -67,6 +67,14 @@
           </svg>
           <span class="vts-rail-label">Focus</span>
         </button>
+        <button type="button" class="vts-rail-btn vts-rail-btn--locate" data-locate-me
+                aria-label="Find my current location" aria-pressed="false" title="Find my location">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 21s-6-5.6-6-10.5a6 6 0 1 1 12 0C18 15.4 12 21 12 21Z"/>
+            <circle cx="12" cy="10.5" r="2.2" fill="currentColor" stroke="none"/>
+          </svg>
+          <span class="vts-rail-label">Locate</span>
+        </button>
 
         <div class="vts-rail-bottom">
           <span class="vts-rail-divider" aria-hidden="true"></span>
@@ -142,22 +150,34 @@
                 <span>Manage</span>
               </a>
             </div>
-            <button type="button" id="dashboard-expand-toggle" class="btn btn-sm btn-outline-secondary liquid-glass-btn vts-expand-toggle"
-                    aria-pressed="false" aria-label="Maximize dashboard to full screen" title="Maximize dashboard">
-              <svg class="vts-btn-icon vts-icon-expand" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
-              </svg>
-              <svg class="vts-btn-icon vts-icon-split" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="3" y="4" width="18" height="16" rx="2.5"/>
-                <path d="M12 4v16"/>
-              </svg>
-              <span class="vts-expand-label">Maximize</span>
-              <span class="vts-collapse-label">Show map</span>
-            </button>
+            <div class="vts-panel-toolbar-right">
+              <button type="button" id="locate-me-btn" class="vts-locate-btn" data-locate-me
+                      aria-label="Find my current location" aria-pressed="false" title="Find my location">
+                <svg class="vts-locate-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="7"/>
+                  <circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/>
+                  <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+                </svg>
+              </button>
+              <button type="button" id="dashboard-expand-toggle" class="btn btn-sm btn-outline-secondary liquid-glass-btn vts-expand-toggle"
+                      aria-pressed="false" aria-label="Maximize dashboard to full screen" title="Maximize dashboard">
+                <svg class="vts-btn-icon vts-icon-expand" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                </svg>
+                <svg class="vts-btn-icon vts-icon-split" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="3" y="4" width="18" height="16" rx="2.5"/>
+                  <path d="M12 4v16"/>
+                </svg>
+                <span class="vts-expand-label">Maximize</span>
+                <span class="vts-collapse-label">Show map</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </header>
+
+    {% include "_my_location_card.html" %}
 
     <div class="tab-content vts-tab-content">
       <section class="tab-pane fade show active vts-tab-pane" id="fleet-panel" role="tabpanel" aria-labelledby="fleet-tab" tabindex="0">
@@ -522,6 +542,6 @@
 
 {% block body_js %}
 <script src="{% static 'vendor/leaflet/leaflet.js' %}"></script>
-<script src="{% static 'js/vts-common.js' %}?v=vts-ui-15"></script>
-<script src="{% static 'js/admin-map.js' %}?v=vts-ui-20"></script>
+<script src="{% static 'js/vts-common.js' %}?v=vts-ui-16"></script>
+<script src="{% static 'js/admin-map.js' %}?v=vts-ui-21"></script>
 {% endblock %}

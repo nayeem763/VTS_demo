@@ -56,6 +56,15 @@
           </svg>
           <span class="vts-rail-label">Route</span>
         </button>
+        <button type="button" class="vts-rail-btn vts-rail-btn--locate" data-locate-me
+                aria-label="Find my current location" aria-pressed="false" title="Find my location">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="7"/>
+            <circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/>
+            <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+          </svg>
+          <span class="vts-rail-label">Locate</span>
+        </button>
       </nav>
 
       <header class="vts-panel-header">
@@ -64,11 +73,23 @@
           <p class="vts-panel-eyebrow">Campus transport</p>
           <h1 class="vts-panel-title">Live vehicles</h1>
         </div>
-        <span class="vts-live-indicator">Live</span>
+        <div class="vts-panel-top-actions">
+          <button type="button" id="locate-me-btn" class="vts-locate-btn" data-locate-me
+                  aria-label="Find my current location" aria-pressed="false" title="Find my location">
+            <svg class="vts-locate-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="7"/>
+              <circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/>
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+            </svg>
+          </button>
+          <span class="vts-live-indicator">Live</span>
+        </div>
       </div>
       <p class="vts-panel-copy">Real-time locations reported by active campus vehicles.</p>
       <div id="map-status" class="vts-status-bar" role="status" aria-live="polite">Loading fleet…</div>
     </header>
+
+    {% include "_my_location_card.html" %}
 
     <div class="vts-search">
       <svg class="vts-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -137,6 +158,6 @@
 
 {% block body_js %}
 <script src="{% static 'vendor/leaflet/leaflet.js' %}"></script>
-<script src="{% static 'js/vts-common.js' %}?v=vts-ui-15"></script>
-<script src="{% static 'js/public-map.js' %}?v=vts-ui-7"></script>
+<script src="{% static 'js/vts-common.js' %}?v=vts-ui-16"></script>
+<script src="{% static 'js/public-map.js' %}?v=vts-ui-8"></script>
 {% endblock %}

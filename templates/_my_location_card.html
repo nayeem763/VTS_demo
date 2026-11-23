@@ -1,0 +1,38 @@
+<section id="my-location-card" class="vts-my-loc is-no-fix d-none" hidden aria-label="Your current location" aria-live="polite">
+  <div class="vts-my-loc__head">
+    <div class="vts-my-loc__title-wrap">
+      <span class="vts-my-loc__dot" aria-hidden="true"></span>
+      <div>
+        <div class="vts-my-loc__eyebrow">Your location</div>
+        <div id="my-location-status" class="vts-my-loc__status">Locating your position…</div>
+      </div>
+    </div>
+    <button type="button" id="my-location-close" class="vts-my-loc__close" aria-label="Clear my location" title="Clear location">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M18 6 6 18M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="vts-my-loc__coords-row">
+    <code id="my-location-coords" class="vts-my-loc__coords">—</code>
+    <div class="vts-my-loc__actions">
+      <button type="button" id="my-location-copy" class="btn btn-sm vts-my-loc__btn" disabled title="Copy latitude and longitude">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="9" y="9" width="11" height="11" rx="2"/>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+        </svg>
+        <span data-copy-label>Copy</span>
+      </button>
+      <button type="button" id="my-location-route-start" class="btn btn-sm vts-my-loc__btn vts-my-loc__btn--primary" disabled title="Use my location as starting point in route planner">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+        </svg>
+        <span>Route from here</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="my-location-meta" class="vts-my-loc__meta"></div>
+  <div id="my-location-nearest" class="vts-my-loc__nearest"></div>
+</section>

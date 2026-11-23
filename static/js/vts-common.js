@@ -10,6 +10,10 @@ window.VTS = (function () {
   const ICON_TRASH = '<svg class="vts-inline-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg>';
   const ICON_CLOSE = '<svg class="vts-inline-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
   const ICON_BUS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3.5" width="16" height="13.5" rx="3"/><path d="M4 11h16M7.5 17v2.5M16.5 17v2.5"/></svg>';
+  const CAMPUS_LANDMARKS = [
+    { name: "Chittagong University", lat: 22.4716, lng: 91.7876 },
+    { name: "CU Railway Station", lat: 22.47068, lng: 91.79423 },
+  ];
 
   // ---- CSRF (Django) ------------------------------------------------------
   function getCookie(name) {
@@ -96,6 +100,33 @@ window.VTS = (function () {
     return isNaN(n) ? null : Math.round(n) + " km/h";
   }
 
+  function haversineMeters(lat1, lng1, lat2, lng2) {
+    const toRad = Math.PI / 180;
+    const dLat = (lat2 - lat1) * toRad;
+    const dLng = (lng2 - lng1) * toRad;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(Math.max(0, 1 - a)));
+  }
+
+  function fmtDistance(meters) {
+    if (!isFinite(meters) || meters < 0) return "";
+    if (meters < 1000) return Math.round(meters) + " m";
+    return (meters / 1000).toFixed(meters >= 10000 ? 1 : 2) + " km";
+  }
+
+  function userLocationIcon() {
+    return L.divIcon({
+      className: "vts-user-marker-wrap",
+      html: '<div class="vts-user-marker" aria-hidden="true"></div>',
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
+      popupAnchor: [0, -12],
+    });
+  }
+
   // ---- Leaflet helpers ----------------------------------------------------
   function tileLayer() {
     return L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -130,6 +161,7 @@ window.VTS = (function () {
     const statusEl = settings.statusEl || null;
     const routePlanner = settings.routePlanner || null;
     const routeManager = settings.routeManager || null;
+    const userLocator = settings.userLocator || null;
 
     const endpoint = mapEl.dataset.endpoint;
     const poll = parseInt(mapEl.dataset.poll || "8000", 10);
@@ -142,11 +174,22 @@ window.VTS = (function () {
     tileLayer().addTo(map);
 
     const markers = new Map(); // vehicle_id -> { marker, latlng }
+    let latestVehicles = [];
     let didFit = false;
     let selectedVehicleId = null;
     let plannedRouteLayer = null;
     let routeRequestController = null;
     let routeRequestId = 0;
+    const userLocation = {
+      lat: null,
+      lng: null,
+      accuracy: null,
+      timestamp: null,
+      marker: null,
+      accuracyCircle: null,
+      locating: false,
+      copyTimer: null,
+    };
     const fixedRouteStates = new Map(); // route_id -> rendered route state
     const hiddenFixedRouteIds = loadHiddenFixedRouteIds();
     // Google Maps official transit/navigation palette (vibrant core + crisp darker border casing)
@@ -1023,6 +1066,332 @@ window.VTS = (function () {
       statusEl.classList.toggle("text-danger", !!isError);
     }
 
+    // ---- User "My Location" finder (available to all personas) ------------
+    function locatorButtons() {
+      if (!userLocator || !userLocator.buttons) return [];
+      return Array.prototype.slice.call(userLocator.buttons);
+    }
+
+    function nearestCampusLandmark(lat, lng) {
+      let best = null;
+      CAMPUS_LANDMARKS.forEach(function (lm) {
+        const dist = haversineMeters(lat, lng, lm.lat, lm.lng);
+        if (!best || dist < best.distance) {
+          best = { name: lm.name, distance: dist };
+        }
+      });
+      if (!best) return "";
+      if (best.distance < 80) return "At " + best.name;
+      return fmtDistance(best.distance) + " from " + best.name;
+    }
+
+    function findNearestActiveVehicle(lat, lng) {
+      let best = null;
+      latestVehicles.forEach(function (v) {
+        if (!v || !v.has_signal) return;
+        const vLat = parseFloat(v.latitude);
+        const vLng = parseFloat(v.longitude);
+        if (!isFinite(vLat) || !isFinite(vLng)) return;
+        const dist = haversineMeters(lat, lng, vLat, vLng);
+        if (!best || dist < best.distance) {
+          best = { vehicle: v, distance: dist };
+        }
+      });
+      return best;
+    }
+
+    function formatUserCoords() {
+      if (userLocation.lat == null || userLocation.lng == null) return "";
+      return userLocation.lat.toFixed(6) + ", " + userLocation.lng.toFixed(6);
+    }
+
+    function userPopupHtml() {
+      const coordsText = formatUserCoords();
+      const landmark = nearestCampusLandmark(userLocation.lat, userLocation.lng);
+      const nearest = findNearestActiveVehicle(userLocation.lat, userLocation.lng);
+      const details = [];
+      details.push('<div class="vts-popup-row"><span>Coordinates</span><strong>' + escapeHtml(coordsText) + "</strong></div>");
+      if (isFinite(userLocation.accuracy)) {
+        details.push('<div class="vts-popup-row"><span>Accuracy</span><strong>± ' + escapeHtml(String(Math.round(userLocation.accuracy))) + " m</strong></div>");
+      }
+      if (nearest) {
+        details.push(
+          '<div class="vts-popup-row"><span>Nearest bus</span><strong>' +
+            escapeHtml(nearest.vehicle.bus_number) + " · " + escapeHtml(fmtDistance(nearest.distance)) +
+          "</strong></div>"
+        );
+      }
+      return (
+        '<div class="vts-popup-card">' +
+          '<div class="vts-popup-head">' +
+            '<strong class="vts-popup-title">Your location</strong>' +
+            '<span class="status-badge is-user">You</span>' +
+          "</div>" +
+          (landmark ? '<div class="vts-popup-route">' + escapeHtml(landmark) + "</div>" : "") +
+          '<div class="vts-popup-grid">' + details.join("") + "</div>" +
+        "</div>"
+      );
+    }
+
+    function setLocatorBusy(isBusy) {
+      userLocation.locating = isBusy;
+      locatorButtons().forEach(function (btn) {
+        btn.classList.toggle("is-locating", isBusy);
+        btn.setAttribute("aria-busy", String(isBusy));
+        btn.disabled = isBusy;
+      });
+    }
+
+    function setLocatorActive(isActive) {
+      locatorButtons().forEach(function (btn) {
+        btn.classList.toggle("is-located", isActive);
+        btn.setAttribute("aria-pressed", String(isActive));
+      });
+    }
+
+    function renderUserLocationCard() {
+      if (!userLocator || !userLocator.cardEl) return;
+      const hasFix = userLocation.lat != null && userLocation.lng != null;
+      if (!hasFix) return;
+      const card = userLocator.cardEl;
+      card.hidden = false;
+      card.classList.remove("d-none", "is-error", "is-loading", "is-no-fix");
+
+      const coordsText = formatUserCoords();
+      const landmark = nearestCampusLandmark(userLocation.lat, userLocation.lng);
+      const accuracyText = isFinite(userLocation.accuracy)
+        ? "± " + Math.round(userLocation.accuracy) + " m"
+        : "GPS fix";
+      const updatedText = userLocation.timestamp ? fmtTime(userLocation.timestamp) : "";
+
+      if (userLocator.statusEl) {
+        userLocator.statusEl.textContent = landmark || "Current GPS position";
+      }
+      if (userLocator.coordsEl) {
+        userLocator.coordsEl.textContent = coordsText;
+      }
+      if (userLocator.metaEl) {
+        userLocator.metaEl.textContent = [accuracyText, updatedText ? "Updated " + updatedText : ""]
+          .filter(function (part) { return part; })
+          .join(" · ");
+      }
+      if (userLocator.nearestEl) {
+        const nearest = findNearestActiveVehicle(userLocation.lat, userLocation.lng);
+        if (nearest) {
+          const v = nearest.vehicle;
+          const label = v.bus_number + (v.route_label ? " (" + v.route_label + ")" : "");
+          userLocator.nearestEl.innerHTML =
+            '<button type="button" class="vts-my-loc__nearest-btn" data-focus-nearest-vehicle="' +
+              escapeHtml(String(v.vehicle_id)) + '">' +
+              '<span class="vts-my-loc__nearest-label">Nearest bus: <strong>' + escapeHtml(label) + "</strong></span>" +
+              '<span class="vts-my-loc__nearest-dist">' + escapeHtml(fmtDistance(nearest.distance)) + "</span>" +
+            "</button>";
+          const focusBtn = userLocator.nearestEl.querySelector("[data-focus-nearest-vehicle]");
+          if (focusBtn) {
+            focusBtn.addEventListener("click", function () {
+              focus(parseInt(focusBtn.dataset.focusNearestVehicle, 10));
+            });
+          }
+        } else {
+          userLocator.nearestEl.innerHTML =
+            '<span class="vts-my-loc__nearest-empty">No active buses reporting GPS right now.</span>';
+        }
+      }
+      if (userLocator.copyBtn) userLocator.copyBtn.disabled = false;
+      if (userLocator.routeStartBtn) userLocator.routeStartBtn.disabled = false;
+    }
+
+    function showUserLocationStatus(message, isError) {
+      if (!userLocator || !userLocator.cardEl) return;
+      const card = userLocator.cardEl;
+      card.hidden = false;
+      card.classList.remove("d-none");
+      card.classList.toggle("is-error", !!isError);
+      card.classList.toggle("is-loading", !isError);
+      if (userLocator.statusEl) userLocator.statusEl.textContent = message;
+      const hasFix = userLocation.lat != null && userLocation.lng != null;
+      card.classList.toggle("is-no-fix", !hasFix);
+      if (!hasFix) {
+        if (userLocator.coordsEl) userLocator.coordsEl.textContent = "—";
+        if (userLocator.metaEl) userLocator.metaEl.textContent = "";
+        if (userLocator.nearestEl) userLocator.nearestEl.textContent = "";
+        if (userLocator.copyBtn) userLocator.copyBtn.disabled = true;
+        if (userLocator.routeStartBtn) userLocator.routeStartBtn.disabled = true;
+      }
+      if (isError) {
+        const split = mapEl.closest(".vts-split");
+        if (split && split.classList.contains("is-side-collapsed")) {
+          const expandBtn = split.querySelector("[data-side-toggle]");
+          if (expandBtn) expandBtn.click();
+        }
+      }
+    }
+
+    function applyUserPosition(lat, lng, accuracy, timestampIso) {
+      userLocation.lat = lat;
+      userLocation.lng = lng;
+      userLocation.accuracy = isFinite(accuracy) && accuracy > 0 ? accuracy : null;
+      userLocation.timestamp = timestampIso || new Date().toISOString();
+
+      const latlng = [lat, lng];
+      const radius = isFinite(accuracy) && accuracy > 0 ? Math.min(Math.max(accuracy, 8), 2000) : 25;
+      if (!userLocation.accuracyCircle) {
+        userLocation.accuracyCircle = L.circle(latlng, {
+          radius: radius,
+          color: "#1a73e8",
+          fillColor: "#4285f4",
+          fillOpacity: 0.14,
+          weight: 1.5,
+          interactive: false,
+        }).addTo(map);
+      } else {
+        userLocation.accuracyCircle.setLatLng(latlng);
+        userLocation.accuracyCircle.setRadius(radius);
+      }
+
+      if (!userLocation.marker) {
+        userLocation.marker = L.marker(latlng, {
+          icon: userLocationIcon(),
+          title: "Your location",
+          zIndexOffset: 900,
+        }).addTo(map);
+      } else {
+        userLocation.marker.setLatLng(latlng);
+      }
+
+      userLocation.marker.bindPopup(userPopupHtml());
+      didFit = true;
+      setLocatorActive(true);
+      renderUserLocationCard();
+      map.setView(latlng, Math.max(map.getZoom(), 16));
+      userLocation.marker.openPopup();
+    }
+
+    function clearUserLocation() {
+      if (userLocation.marker && map.hasLayer(userLocation.marker)) {
+        map.removeLayer(userLocation.marker);
+      }
+      if (userLocation.accuracyCircle && map.hasLayer(userLocation.accuracyCircle)) {
+        map.removeLayer(userLocation.accuracyCircle);
+      }
+      userLocation.lat = null;
+      userLocation.lng = null;
+      userLocation.accuracy = null;
+      userLocation.timestamp = null;
+      userLocation.marker = null;
+      userLocation.accuracyCircle = null;
+      setLocatorActive(false);
+      if (userLocator && userLocator.cardEl) {
+        userLocator.cardEl.hidden = true;
+        userLocator.cardEl.classList.add("d-none", "is-no-fix");
+        userLocator.cardEl.classList.remove("is-error", "is-loading");
+      }
+    }
+
+    function locateUser() {
+      if (userLocation.locating) return;
+      if (!navigator.geolocation) {
+        showUserLocationStatus("Geolocation is not supported by this browser.", true);
+        return;
+      }
+      if (window.isSecureContext === false) {
+        showUserLocationStatus("Location access requires a secure (HTTPS) connection.", true);
+        return;
+      }
+
+      setLocatorBusy(true);
+      showUserLocationStatus("Locating your position…", false);
+
+      navigator.geolocation.getCurrentPosition(
+        function (position) {
+          setLocatorBusy(false);
+          const coords = position && position.coords;
+          if (!coords || !isFinite(coords.latitude) || !isFinite(coords.longitude)) {
+            showUserLocationStatus("Received invalid coordinates from your device.", true);
+            return;
+          }
+          if (coords.latitude < -90 || coords.latitude > 90 || coords.longitude < -180 || coords.longitude > 180) {
+            showUserLocationStatus("Received out-of-range coordinates from your device.", true);
+            return;
+          }
+          const ts = position.timestamp ? new Date(position.timestamp).toISOString() : new Date().toISOString();
+          applyUserPosition(coords.latitude, coords.longitude, coords.accuracy, ts);
+        },
+        function (err) {
+          setLocatorBusy(false);
+          let message = "Your current location could not be determined right now. Please try again.";
+          if (err && err.code === 1) {
+            message = "Location permission was denied. Allow location access in your browser settings and try again.";
+          } else if (err && err.code === 3) {
+            message = "Location request timed out. Move to an open area or try again.";
+          }
+          showUserLocationStatus(message, true);
+        },
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 15000 }
+      );
+    }
+
+    function setupUserLocator() {
+      if (!userLocator) return;
+      locatorButtons().forEach(function (btn) {
+        btn.addEventListener("click", locateUser);
+      });
+      if (userLocator.closeBtn) {
+        userLocator.closeBtn.addEventListener("click", clearUserLocation);
+      }
+      if (userLocator.copyBtn) {
+        userLocator.copyBtn.addEventListener("click", function () {
+          const text = formatUserCoords();
+          if (!text) return;
+          const finishCopy = function () {
+            const label = userLocator.copyBtn.querySelector("[data-copy-label]") || userLocator.copyBtn;
+            if (!label.dataset.copyDefault) label.dataset.copyDefault = label.textContent;
+            label.textContent = "Copied";
+            if (userLocation.copyTimer) window.clearTimeout(userLocation.copyTimer);
+            userLocation.copyTimer = window.setTimeout(function () {
+              label.textContent = label.dataset.copyDefault;
+            }, 1800);
+          };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(finishCopy, function () {
+              /* fallback ignored if clipboard blocked */
+            });
+          } else {
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            ta.setAttribute("readonly", "");
+            ta.style.position = "fixed";
+            ta.style.opacity = "0";
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+              document.execCommand("copy");
+              finishCopy();
+            } catch (e) {
+              /* clipboard unavailable */
+            }
+            ta.remove();
+          }
+        });
+      }
+      if (userLocator.routeStartBtn && routePlanner && routePlanner.sourceInput) {
+        userLocator.routeStartBtn.addEventListener("click", function () {
+          const text = formatUserCoords();
+          if (!text) return;
+          if (userLocator.fleetTab) userLocator.fleetTab.click();
+          if (userLocator.plannerDetails) userLocator.plannerDetails.open = true;
+          routePlanner.sourceInput.value = text;
+          routePlanner.sourceInput.dispatchEvent(new Event("input", { bubbles: true }));
+          if (routePlanner.destinationInput) {
+            routePlanner.destinationInput.focus();
+            if (routePlanner.destinationInput.scrollIntoView) {
+              routePlanner.destinationInput.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+          }
+        });
+      }
+    }
+
     async function refresh() {
       let data;
       try {
@@ -1032,6 +1401,7 @@ window.VTS = (function () {
         return;
       }
       const vehicles = (data && data.results) || [];
+      latestVehicles = vehicles;
       const seen = new Set();
       const bounds = [];
       vehicles.forEach(function (v) {
@@ -1050,6 +1420,10 @@ window.VTS = (function () {
       });
       renderList(vehicles);
       populateSelect(vehicles);
+      if (userLocation.lat != null && userLocation.lng != null) {
+        renderUserLocationCard();
+        if (userLocation.marker) userLocation.marker.setPopupContent(userPopupHtml());
+      }
       const live = vehicles.filter(function (v) { return v.has_signal && !v.is_stale; }).length;
       setStatus(live + " live · " + vehicles.length + " active · updated " + fmtTime(new Date().toISOString()));
       if (!didFit && bounds.length) {
@@ -1066,6 +1440,7 @@ window.VTS = (function () {
 
     setupRoadRoutePlanner();
     setupFixedRouteManager();
+    setupUserLocator();
     refresh();
     const timer = setInterval(refresh, poll);
     // Pause polling when the tab is hidden to save the free-tier request budget.
@@ -1073,7 +1448,14 @@ window.VTS = (function () {
       if (document.visibilityState === "visible") refresh();
     });
 
-    return { map: map, refresh: refresh, focus: focus, stop: function () { clearInterval(timer); } };
+    return {
+      map: map,
+      refresh: refresh,
+      focus: focus,
+      locateUser: locateUser,
+      clearUserLocation: clearUserLocation,
+      stop: function () { clearInterval(timer); },
+    };
   }
 
   return {
@@ -1085,9 +1467,12 @@ window.VTS = (function () {
     fmtAge: fmtAge,
     fmtTime: fmtTime,
     fmtSpeed: fmtSpeed,
+    haversineMeters: haversineMeters,
+    fmtDistance: fmtDistance,
     tileLayer: tileLayer,
     statusOf: statusOf,
     markerIcon: markerIcon,
+    userLocationIcon: userLocationIcon,
     startLiveMap: startLiveMap,
   };
 })();
