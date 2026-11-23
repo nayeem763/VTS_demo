@@ -1,0 +1,887 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Fleet Management · CU-VTS{% endblock %}
+{% block nav_fleet %}active{% endblock %}
+{% block main_class %}vts-fleet-page{% endblock %}
+
+{% block content %}
+<div class="vts-fleet-shell">
+  <header class="vts-fleet-header liquid-glass-card">
+    <div class="vts-fleet-header__title">
+      <p class="vts-panel-eyebrow mb-0">CU Transport Authority</p>
+      <h1 class="vts-panel-title mb-0">Fleet management</h1>
+    </div>
+
+    <ul class="nav vts-panel-tabs vts-fleet-tabs" role="tablist" aria-label="Fleet management sections">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link {% if active_tab == 'vehicles' %}active{% endif %}"
+                id="fleet-vehicles-tab" data-bs-toggle="tab" data-bs-target="#fleet-vehicles-pane"
+                type="button" role="tab" aria-controls="fleet-vehicles-pane"
+                aria-selected="{% if active_tab == 'vehicles' %}true{% else %}false{% endif %}">
+          <svg class="vts-ui-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="4" y="4" width="16" height="12" rx="2.5"/>
+            <path d="M4 11h16M7 16v2.5M17 16v2.5"/>
+          </svg>
+          <span>Vehicles</span>
+          <span class="vts-tab-count">{{ kpi.total_vehicles }}</span>
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link {% if active_tab == 'assignments' %}active{% endif %}"
+                id="fleet-assignments-tab" data-bs-toggle="tab" data-bs-target="#fleet-assignments-pane"
+                type="button" role="tab" aria-controls="fleet-assignments-pane"
+                aria-selected="{% if active_tab == 'assignments' %}true{% else %}false{% endif %}">
+          <svg class="vts-ui-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>
+          </svg>
+          <span>Assignments</span>
+          <span class="vts-tab-count">{{ kpi.active_assignments }}</span>
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link {% if active_tab == 'drivers' %}active{% endif %}"
+                id="fleet-drivers-tab" data-bs-toggle="tab" data-bs-target="#fleet-drivers-pane"
+                type="button" role="tab" aria-controls="fleet-drivers-pane"
+                aria-selected="{% if active_tab == 'drivers' %}true{% else %}false{% endif %}">
+          <svg class="vts-ui-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="8" r="3.5"/>
+            <path d="M5 19.5a7 7 0 0 1 14 0"/>
+          </svg>
+          <span>Drivers</span>
+          <span class="vts-tab-count">{{ kpi.total_drivers }}</span>
+        </button>
+      </li>
+    </ul>
+
+    <div class="vts-fleet-header__actions">
+      <button type="button" class="btn btn-sm btn-primary vts-pill-btn"
+              data-bs-toggle="modal" data-bs-target="#assign-driver-modal"
+              data-open-assign data-return-tab="{{ active_tab }}">
+        <svg class="vts-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="3.5"/>
+          <path d="M19 8v6M16 11h6"/>
+        </svg>
+        <span>Assign driver</span>
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary vts-pill-btn"
+              data-bs-toggle="modal" data-bs-target="#vehicle-create-modal">
+        <svg class="vts-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        <span>Add vehicle</span>
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary vts-pill-btn"
+              data-bs-toggle="modal" data-bs-target="#driver-create-modal">
+        <svg class="vts-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        <span>Add driver</span>
+      </button>
+      {% if user.is_staff or user.is_superuser %}
+      <a href="{% url 'admin:index' %}" class="btn btn-sm btn-outline-secondary vts-pill-btn"
+         title="Open Django Admin console">
+        <span>Django Admin</span>
+      </a>
+      {% endif %}
+    </div>
+  </header>
+
+  {% if messages %}
+  <div class="vts-fleet-alerts" aria-live="polite">
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show vts-fleet-alert" role="alert">
+      <span>{{ message }}</span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Dismiss"></button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <section class="vts-fleet-kpis" aria-label="Fleet management overview">
+    <div class="vts-kpi-card liquid-glass-card">
+      <div class="vts-kpi-top">
+        <span class="vts-kpi-label">Active fleet</span>
+        <span class="vts-kpi-icon vts-kpi-icon--total" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="4" width="16" height="12" rx="2.5"/>
+            <path d="M4 11h16M7 16v2.5M17 16v2.5"/>
+          </svg>
+        </span>
+      </div>
+      <div class="vts-kpi-value">{{ kpi.active_vehicles }} <span class="vts-kpi-denom">/ {{ kpi.total_vehicles }}</span></div>
+      <div class="vts-kpi-sub">Active vehicles on live map</div>
+    </div>
+
+    <div class="vts-kpi-card liquid-glass-card">
+      <div class="vts-kpi-top">
+        <span class="vts-kpi-label">Assigned buses</span>
+        <span class="vts-kpi-icon vts-kpi-icon--live" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 6 9 17l-5-5"/>
+          </svg>
+        </span>
+      </div>
+      <div class="vts-kpi-value">{{ kpi.assigned_vehicles }}</div>
+      <div class="vts-kpi-sub">{{ kpi.unassigned_vehicles }} active bus{{ kpi.unassigned_vehicles|pluralize:"es" }} awaiting driver</div>
+    </div>
+
+    <div class="vts-kpi-card liquid-glass-card">
+      <div class="vts-kpi-top">
+        <span class="vts-kpi-label">Available drivers</span>
+        <span class="vts-kpi-icon vts-kpi-icon--stale" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="3.5"/>
+            <path d="M5 19.5a7 7 0 0 1 14 0"/>
+          </svg>
+        </span>
+      </div>
+      <div class="vts-kpi-value">{{ kpi.available_drivers }} <span class="vts-kpi-denom">/ {{ kpi.active_drivers }}</span></div>
+      <div class="vts-kpi-sub">Unassigned active drivers ready</div>
+    </div>
+
+    <div class="vts-kpi-card liquid-glass-card">
+      <div class="vts-kpi-top">
+        <span class="vts-kpi-label">Active assignments</span>
+        <span class="vts-kpi-icon vts-kpi-icon--offline" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="8.5"/>
+            <path d="M12 7.5V12l3 2"/>
+          </svg>
+        </span>
+      </div>
+      <div class="vts-kpi-value">{{ kpi.active_assignments }}</div>
+      <div class="vts-kpi-sub">Live driver-to-vehicle pairings</div>
+    </div>
+  </section>
+
+  <div class="tab-content vts-fleet-content">
+    <!-- TAB 1: VEHICLES -->
+    <section class="tab-pane fade {% if active_tab == 'vehicles' %}show active{% endif %}"
+             id="fleet-vehicles-pane" role="tabpanel" aria-labelledby="fleet-vehicles-tab" tabindex="0">
+      <div class="liquid-glass-card vts-fleet-card">
+        <div class="vts-fleet-toolbar">
+          <div>
+            <h2 class="vts-fleet-card__title mb-0">Fleet vehicles</h2>
+            <p class="vts-fleet-card__sub mb-0">Rename buses, maintain admin-only dispatch notes, and assign or deassign drivers.</p>
+          </div>
+          <div class="vts-fleet-controls">
+            <div class="vts-status-pills" role="group" aria-label="Filter vehicles">
+              <button type="button" class="vts-filter-pill active" data-vehicle-filter="all">All</button>
+              <button type="button" class="vts-filter-pill" data-vehicle-filter="assigned">Assigned</button>
+              <button type="button" class="vts-filter-pill" data-vehicle-filter="unassigned">Unassigned</button>
+              <button type="button" class="vts-filter-pill" data-vehicle-filter="inactive">Inactive</button>
+            </div>
+            <div class="vts-roster-search">
+              <svg class="vts-roster-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"/>
+                <path d="m20 20-3.5-3.5"/>
+              </svg>
+              <input type="search" id="fleet-vehicle-search" class="form-control form-control-sm"
+                     placeholder="Search bus, route, note…" aria-label="Search fleet vehicles">
+            </div>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table vts-fleet-table align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Vehicle</th>
+                <th>Route</th>
+                <th>
+                  <span class="vts-admin-col-head">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <rect x="4" y="11" width="16" height="10" rx="2"/>
+                      <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+                    </svg>
+                    <span>Admin-only note</span>
+                  </span>
+                </th>
+                <th>Assigned driver</th>
+                <th>Status</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="fleet-vehicles-tbody">
+              {% for v in vehicles %}
+              <tr data-vehicle-row
+                  data-status="{% if not v.is_active %}inactive{% elif v.current_assignment %}assigned{% else %}unassigned{% endif %}"
+                  data-search="{{ v.bus_number|lower }} {{ v.registration_number|default:''|lower }} {{ v.route_label|lower }} {{ v.admin_description|lower }} {% if v.current_assignment %}{{ v.current_assignment.driver.display_name|lower }}{% endif %}">
+                <td>
+                  <div class="vts-cell-primary">{{ v.bus_number }}</div>
+                  <div class="vts-cell-sub">{{ v.registration_number|default:"No registration" }} · {{ v.trip_count }} trip{{ v.trip_count|pluralize }}</div>
+                </td>
+                <td>
+                  <span class="vts-cell-text">{{ v.route_label|default:"—" }}</span>
+                </td>
+                <td>
+                  {% if v.admin_description %}
+                    <span class="vts-admin-note-inline">{{ v.admin_description }}</span>
+                  {% else %}
+                    <span class="vts-cell-muted">No admin note</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if v.current_assignment %}
+                    <div class="vts-driver-pill">
+                      <span class="vts-driver-pill__dot" aria-hidden="true"></span>
+                      <span>{{ v.current_assignment.driver.display_name }}</span>
+                    </div>
+                    <div class="vts-cell-sub">Since {{ v.current_assignment.starts_at|date:"d M · H:i" }}</div>
+                  {% else %}
+                    <span class="status-badge is-offline">Unassigned</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if v.is_active %}
+                    <span class="status-badge is-live">Active</span>
+                  {% else %}
+                    <span class="status-badge is-offline">Inactive</span>
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  <div class="vts-action-group justify-content-end">
+                    {% if v.is_active %}
+                    <button type="button" class="btn btn-sm btn-primary vts-pill-btn vts-pill-btn--xs"
+                            data-bs-toggle="modal" data-bs-target="#assign-driver-modal"
+                            data-open-assign
+                            data-vehicle-id="{{ v.id }}"
+                            data-driver-id="{% if v.current_assignment %}{{ v.current_assignment.driver_id }}{% endif %}"
+                            data-return-tab="vehicles">
+                      {% if v.current_assignment %}Reassign{% else %}Assign{% endif %}
+                    </button>
+                    {% endif %}
+                    {% if v.current_assignment %}
+                    <form method="post" action="{% url 'web:fleet_deassign' v.current_assignment.id %}" class="d-inline">
+                      {% csrf_token %}
+                      <input type="hidden" name="return_tab" value="vehicles">
+                      <button type="submit" class="btn btn-sm btn-outline-warning vts-pill-btn vts-pill-btn--xs">Deassign</button>
+                    </form>
+                    {% endif %}
+                    <button type="button" class="btn btn-sm btn-outline-secondary vts-pill-btn vts-pill-btn--xs"
+                            data-bs-toggle="modal" data-bs-target="#vehicle-edit-modal"
+                            data-edit-vehicle
+                            data-action="{% url 'web:fleet_vehicle_edit' v.id %}"
+                            data-bus-number="{{ v.bus_number }}"
+                            data-registration="{{ v.registration_number|default:'' }}"
+                            data-route-label="{{ v.route_label }}"
+                            data-admin-description="{{ v.admin_description }}">
+                      Edit / Rename
+                    </button>
+                    <form method="post" action="{% url 'web:fleet_vehicle_toggle' v.id %}" class="d-inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-outline-secondary vts-pill-btn vts-pill-btn--xs">
+                        {% if v.is_active %}Deactivate{% else %}Activate{% endif %}
+                      </button>
+                    </form>
+                    {% if v.can_delete %}
+                    <form method="post" action="{% url 'web:fleet_vehicle_delete' v.id %}" class="d-inline"
+                          data-confirm="Delete unused vehicle {{ v.bus_number }} permanently?">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-outline-danger vts-pill-btn vts-pill-btn--xs">Delete</button>
+                    </form>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="text-center py-4 text-muted">
+                  No vehicles yet. Click <strong>Add vehicle</strong> to register your first bus.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div id="fleet-vehicles-empty" class="vts-list-placeholder d-none">No vehicles match the current filter.</div>
+      </div>
+    </section>
+
+    <!-- TAB 2: ASSIGNMENTS & HISTORY -->
+    <section class="tab-pane fade {% if active_tab == 'assignments' %}show active{% endif %}"
+             id="fleet-assignments-pane" role="tabpanel" aria-labelledby="fleet-assignments-tab" tabindex="0">
+      <div class="row g-3 align-items-start">
+        <div class="col-lg-5">
+          <div class="liquid-glass-card vts-fleet-card vts-fleet-card--padded">
+            <h2 class="vts-fleet-card__title mb-1">Assign or reassign driver</h2>
+            <p class="vts-fleet-card__sub mb-3">
+              Select a vehicle to review its admin-only note before pairing a driver.
+            </p>
+            <form method="post" action="{% url 'web:fleet_assign' %}" id="inline-assign-form" data-assign-form>
+              {% csrf_token %}
+              <input type="hidden" name="return_tab" value="assignments">
+
+              <div class="mb-3">
+                <label for="inline-assign-vehicle" class="form-label small fw-semibold mb-1">Vehicle</label>
+                <select id="inline-assign-vehicle" name="vehicle" class="form-select form-select-sm" data-assign-vehicle required>
+                  <option value="">Choose an active vehicle…</option>
+                  {% for v in active_vehicles %}
+                  <option value="{{ v.id }}"
+                          data-bus-number="{{ v.bus_number }}"
+                          data-route="{{ v.route_label|default:'Route not set' }}"
+                          data-registration="{{ v.registration_number|default:'No reg.' }}"
+                          data-admin-description="{{ v.admin_description }}"
+                          data-current-driver-id="{% if v.current_assignment %}{{ v.current_assignment.driver_id }}{% endif %}"
+                          data-current-driver-name="{% if v.current_assignment %}{{ v.current_assignment.driver.display_name }}{% endif %}">
+                    {{ v.bus_number }}{% if v.route_label %} · {{ v.route_label }}{% endif %}{% if v.current_assignment %} (Assigned: {{ v.current_assignment.driver.display_name }}){% else %} (Unassigned){% endif %}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="vts-admin-note-box mb-3 d-none" data-vehicle-brief aria-live="polite">
+                <div class="vts-admin-note-box__head">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="4" y="11" width="16" height="10" rx="2"/>
+                    <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+                  </svg>
+                  <span>Admin-only vehicle note</span>
+                  <span class="ms-auto vts-admin-note-box__meta" data-brief-meta></span>
+                </div>
+                <p class="vts-admin-note-box__body mb-0" data-brief-note></p>
+              </div>
+
+              <div class="mb-3">
+                <label for="inline-assign-driver" class="form-label small fw-semibold mb-1">Driver</label>
+                <select id="inline-assign-driver" name="driver" class="form-select form-select-sm" data-assign-driver required>
+                  <option value="">Choose an active driver…</option>
+                  {% for d in active_drivers %}
+                  <option value="{{ d.id }}"
+                          data-driver-name="{{ d.display_name }}"
+                          data-current-vehicle-id="{% if d.current_assignment %}{{ d.current_assignment.vehicle_id }}{% endif %}"
+                          data-current-vehicle-name="{% if d.current_assignment %}{{ d.current_assignment.vehicle.bus_number }}{% endif %}">
+                    {{ d.display_name }}{% if d.employee_id %} ({{ d.employee_id }}){% endif %}{% if d.current_assignment %} · Currently on {{ d.current_assignment.vehicle.bus_number }}{% else %} · Available{% endif %}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="alert alert-warning small py-2 px-3 mb-3 d-none" role="alert" data-assign-warning></div>
+
+              <button type="submit" class="btn btn-sm btn-primary w-100 vts-pill-btn">Confirm assignment</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="col-lg-7 d-flex flex-column gap-3">
+          <div class="liquid-glass-card vts-fleet-card">
+            <div class="vts-fleet-toolbar">
+              <div>
+                <h2 class="vts-fleet-card__title mb-0">Active assignments</h2>
+                <p class="vts-fleet-card__sub mb-0">Ending an assignment immediately closes any open live trip for that pairing.</p>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table vts-fleet-table align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Vehicle</th>
+                    <th>Driver</th>
+                    <th>Admin note</th>
+                    <th>Started</th>
+                    <th class="text-end">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for a in active_assignments %}
+                  <tr>
+                    <td>
+                      <div class="vts-cell-primary">{{ a.vehicle.bus_number }}</div>
+                      <div class="vts-cell-sub">{{ a.vehicle.route_label|default:"—" }}</div>
+                    </td>
+                    <td>
+                      <div class="vts-cell-primary">{{ a.driver.display_name }}</div>
+                      <div class="vts-cell-sub">{{ a.driver.phone_number|default:"No phone" }}</div>
+                    </td>
+                    <td>
+                      {% if a.vehicle.admin_description %}
+                        <span class="vts-admin-note-inline">{{ a.vehicle.admin_description }}</span>
+                      {% else %}
+                        <span class="vts-cell-muted">—</span>
+                      {% endif %}
+                    </td>
+                    <td class="vts-cell-sub">{{ a.starts_at|date:"d M Y · H:i" }}</td>
+                    <td class="text-end">
+                      <form method="post" action="{% url 'web:fleet_deassign' a.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="return_tab" value="assignments">
+                        <button type="submit" class="btn btn-sm btn-outline-warning vts-pill-btn vts-pill-btn--xs">Deassign</button>
+                      </form>
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">No active driver assignments.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="liquid-glass-card vts-fleet-card">
+            <div class="vts-fleet-toolbar">
+              <div>
+                <h2 class="vts-fleet-card__title mb-0">Recent assignment history</h2>
+                <p class="vts-fleet-card__sub mb-0">Auditable record of the latest 35 duty assignments.</p>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table vts-fleet-table align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Vehicle</th>
+                    <th>Driver</th>
+                    <th>Started</th>
+                    <th>Ended</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for a in recent_assignments %}
+                  <tr>
+                    <td class="vts-cell-primary">{{ a.vehicle.bus_number }}</td>
+                    <td>{{ a.driver.display_name }}</td>
+                    <td class="vts-cell-sub">{{ a.starts_at|date:"d M Y · H:i" }}</td>
+                    <td class="vts-cell-sub">{% if a.ends_at %}{{ a.ends_at|date:"d M Y · H:i" }}{% else %}—{% endif %}</td>
+                    <td>
+                      {% if a.is_active %}
+                        <span class="status-badge is-live">Active</span>
+                      {% else %}
+                        <span class="status-badge is-offline">Ended</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">No assignment history recorded yet.</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: DRIVERS -->
+    <section class="tab-pane fade {% if active_tab == 'drivers' %}show active{% endif %}"
+             id="fleet-drivers-pane" role="tabpanel" aria-labelledby="fleet-drivers-tab" tabindex="0">
+      <div class="liquid-glass-card vts-fleet-card">
+        <div class="vts-fleet-toolbar">
+          <div>
+            <h2 class="vts-fleet-card__title mb-0">Driver roster</h2>
+            <p class="vts-fleet-card__sub mb-0">Manage driver accounts, employee IDs, phone numbers, and vehicle duties.</p>
+          </div>
+          <div class="vts-fleet-controls">
+            <div class="vts-status-pills" role="group" aria-label="Filter drivers">
+              <button type="button" class="vts-filter-pill active" data-driver-filter="all">All</button>
+              <button type="button" class="vts-filter-pill" data-driver-filter="assigned">Assigned</button>
+              <button type="button" class="vts-filter-pill" data-driver-filter="available">Available</button>
+              <button type="button" class="vts-filter-pill" data-driver-filter="inactive">Inactive</button>
+            </div>
+            <div class="vts-roster-search">
+              <svg class="vts-roster-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"/>
+                <path d="m20 20-3.5-3.5"/>
+              </svg>
+              <input type="search" id="fleet-driver-search" class="form-control form-control-sm"
+                     placeholder="Search driver, ID, phone…" aria-label="Search drivers">
+            </div>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table vts-fleet-table align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Driver</th>
+                <th>Employee ID &amp; Phone</th>
+                <th>Current vehicle</th>
+                <th>Status</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="fleet-drivers-tbody">
+              {% for d in drivers %}
+              <tr data-driver-row
+                  data-status="{% if not d.is_active %}inactive{% elif d.current_assignment %}assigned{% else %}available{% endif %}"
+                  data-search="{{ d.display_name|lower }} {{ d.user.username|lower }} {{ d.employee_id|default:''|lower }} {{ d.phone_number|lower }} {% if d.current_assignment %}{{ d.current_assignment.vehicle.bus_number|lower }}{% endif %}">
+                <td>
+                  <div class="vts-cell-primary">{{ d.display_name }}</div>
+                  <div class="vts-cell-sub">@{{ d.user.username }} · {{ d.trip_count }} trip{{ d.trip_count|pluralize }}</div>
+                </td>
+                <td>
+                  <div class="vts-cell-text">{{ d.employee_id|default:"No ID" }}</div>
+                  <div class="vts-cell-sub">{{ d.phone_number|default:"No phone" }}</div>
+                </td>
+                <td>
+                  {% if d.current_assignment %}
+                    <div class="vts-driver-pill">
+                      <span class="vts-driver-pill__dot" aria-hidden="true"></span>
+                      <span>{{ d.current_assignment.vehicle.bus_number }}</span>
+                    </div>
+                    <div class="vts-cell-sub">{{ d.current_assignment.vehicle.route_label|default:"Route not set" }}</div>
+                  {% else %}
+                    <span class="status-badge is-offline">Available</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if d.is_active %}
+                    <span class="status-badge is-live">Active</span>
+                  {% else %}
+                    <span class="status-badge is-offline">Inactive</span>
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  <div class="vts-action-group justify-content-end">
+                    {% if d.is_active %}
+                    <button type="button" class="btn btn-sm btn-primary vts-pill-btn vts-pill-btn--xs"
+                            data-bs-toggle="modal" data-bs-target="#assign-driver-modal"
+                            data-open-assign
+                            data-driver-id="{{ d.id }}"
+                            data-vehicle-id="{% if d.current_assignment %}{{ d.current_assignment.vehicle_id }}{% endif %}"
+                            data-return-tab="drivers">
+                      {% if d.current_assignment %}Reassign{% else %}Assign{% endif %}
+                    </button>
+                    {% endif %}
+                    {% if d.current_assignment %}
+                    <form method="post" action="{% url 'web:fleet_deassign' d.current_assignment.id %}" class="d-inline">
+                      {% csrf_token %}
+                      <input type="hidden" name="return_tab" value="drivers">
+                      <button type="submit" class="btn btn-sm btn-outline-warning vts-pill-btn vts-pill-btn--xs">Deassign</button>
+                    </form>
+                    {% endif %}
+                    <button type="button" class="btn btn-sm btn-outline-secondary vts-pill-btn vts-pill-btn--xs"
+                            data-bs-toggle="modal" data-bs-target="#driver-edit-modal"
+                            data-edit-driver
+                            data-action="{% url 'web:fleet_driver_edit' d.id %}"
+                            data-username="{{ d.user.username }}"
+                            data-first-name="{{ d.user.first_name }}"
+                            data-last-name="{{ d.user.last_name }}"
+                            data-employee-id="{{ d.employee_id|default:'' }}"
+                            data-phone="{{ d.phone_number }}">
+                      Edit
+                    </button>
+                    <form method="post" action="{% url 'web:fleet_driver_toggle' d.id %}" class="d-inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-outline-secondary vts-pill-btn vts-pill-btn--xs">
+                        {% if d.is_active %}Deactivate{% else %}Activate{% endif %}
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="text-center py-4 text-muted">
+                  No drivers registered yet. Click <strong>Add driver</strong> to create a driver account.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div id="fleet-drivers-empty" class="vts-list-placeholder d-none">No drivers match the current filter.</div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<datalist id="vts-saved-routes-datalist">
+  {% for rname in bus_routes %}
+  <option value="{{ rname }}"></option>
+  {% endfor %}
+</datalist>
+
+<!-- MODAL 1: ADD VEHICLE -->
+<div class="modal fade" id="vehicle-create-modal" tabindex="-1" aria-labelledby="vehicle-create-title" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content liquid-glass-card vts-report-modal">
+      <form method="post" action="{% url 'web:fleet_vehicle_create' %}">
+        {% csrf_token %}
+        <div class="modal-header vts-report-modal__header">
+          <div>
+            <p class="vts-panel-eyebrow mb-1">Fleet Registry</p>
+            <h2 class="modal-title h5 mb-0 fw-bold" id="vehicle-create-title">Add vehicle</h2>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body vts-report-modal__body">
+          <div class="mb-3">
+            <label for="create-bus-number" class="form-label small fw-semibold mb-1">Vehicle name / bus number *</label>
+            <input type="text" id="create-bus-number" name="bus_number" class="form-control form-control-sm"
+                   maxlength="32" placeholder="e.g. CU-06 or Faculty Shuttle 2" required>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-sm-6">
+              <label for="create-reg" class="form-label small fw-semibold mb-1">Registration number</label>
+              <input type="text" id="create-reg" name="registration_number" class="form-control form-control-sm"
+                     maxlength="64" placeholder="e.g. Chattogram-Ba-11-2045">
+            </div>
+            <div class="col-sm-6">
+              <label for="create-route" class="form-label small fw-semibold mb-1">Route label (public)</label>
+              <input type="text" id="create-route" name="route_label" class="form-control form-control-sm"
+                     maxlength="120" list="vts-saved-routes-datalist" placeholder="e.g. Main Gate - Science">
+            </div>
+          </div>
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-baseline mb-1">
+              <label for="create-admin-desc" class="form-label small fw-semibold mb-0">
+                Short description <span class="text-muted fw-normal">(Admin-only · shown when assigning)</span>
+              </label>
+              <span class="small text-muted" data-char-count-for="create-admin-desc">0 / 280</span>
+            </div>
+            <textarea id="create-admin-desc" name="admin_description" class="form-control form-control-sm"
+                      rows="2" maxlength="280"
+                      placeholder="e.g. 42-seater AC bus · Senior driver required · Rear tyre check due next Monday"></textarea>
+            <div class="form-text small">Visible strictly to administrators—never shown on the public map or driver screen.</div>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="create-active" name="is_active" value="1" checked>
+            <label class="form-check-label small" for="create-active">Active in live fleet immediately</label>
+          </div>
+        </div>
+        <div class="modal-footer vts-report-modal__footer">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-primary">Add vehicle</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 2: RENAME / EDIT VEHICLE -->
+<div class="modal fade" id="vehicle-edit-modal" tabindex="-1" aria-labelledby="vehicle-edit-title" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content liquid-glass-card vts-report-modal">
+      <form method="post" action="" id="vehicle-edit-form">
+        {% csrf_token %}
+        <div class="modal-header vts-report-modal__header">
+          <div>
+            <p class="vts-panel-eyebrow mb-1">Vehicle Details</p>
+            <h2 class="modal-title h5 mb-0 fw-bold" id="vehicle-edit-title">Edit / rename vehicle</h2>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body vts-report-modal__body">
+          <div class="mb-3">
+            <label for="edit-bus-number" class="form-label small fw-semibold mb-1">Vehicle name / bus number *</label>
+            <input type="text" id="edit-bus-number" name="bus_number" class="form-control form-control-sm"
+                   maxlength="32" required>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-sm-6">
+              <label for="edit-reg" class="form-label small fw-semibold mb-1">Registration number</label>
+              <input type="text" id="edit-reg" name="registration_number" class="form-control form-control-sm"
+                     maxlength="64">
+            </div>
+            <div class="col-sm-6">
+              <label for="edit-route" class="form-label small fw-semibold mb-1">Route label (public)</label>
+              <input type="text" id="edit-route" name="route_label" class="form-control form-control-sm"
+                     maxlength="120" list="vts-saved-routes-datalist">
+            </div>
+          </div>
+          <div class="mb-0">
+            <div class="d-flex justify-content-between align-items-baseline mb-1">
+              <label for="edit-admin-desc" class="form-label small fw-semibold mb-0">
+                Short description <span class="text-muted fw-normal">(Admin-only · shown when assigning)</span>
+              </label>
+              <span class="small text-muted" data-char-count-for="edit-admin-desc">0 / 280</span>
+            </div>
+            <textarea id="edit-admin-desc" name="admin_description" class="form-control form-control-sm"
+                      rows="3" maxlength="280"
+                      placeholder="Internal vehicle note visible only to administrators when assigning drivers…"></textarea>
+            <div class="form-text small">Never exposed to public riders, public API, or drivers.</div>
+          </div>
+        </div>
+        <div class="modal-footer vts-report-modal__footer">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-primary">Save changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 3: ASSIGN / REASSIGN DRIVER -->
+<div class="modal fade" id="assign-driver-modal" tabindex="-1" aria-labelledby="assign-driver-title" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content liquid-glass-card vts-report-modal">
+      <form method="post" action="{% url 'web:fleet_assign' %}" id="modal-assign-form" data-assign-form>
+        {% csrf_token %}
+        <input type="hidden" name="return_tab" value="vehicles" id="modal-assign-return-tab">
+        <div class="modal-header vts-report-modal__header">
+          <div>
+            <p class="vts-panel-eyebrow mb-1">Dispatch Assignment</p>
+            <h2 class="modal-title h5 mb-0 fw-bold" id="assign-driver-title">Assign driver to vehicle</h2>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body vts-report-modal__body">
+          <div class="mb-3">
+            <label for="modal-assign-vehicle" class="form-label small fw-semibold mb-1">1. Vehicle *</label>
+            <select id="modal-assign-vehicle" name="vehicle" class="form-select form-select-sm" data-assign-vehicle required>
+              <option value="">Choose an active vehicle…</option>
+              {% for v in active_vehicles %}
+              <option value="{{ v.id }}"
+                      data-bus-number="{{ v.bus_number }}"
+                      data-route="{{ v.route_label|default:'Route not set' }}"
+                      data-registration="{{ v.registration_number|default:'No reg.' }}"
+                      data-admin-description="{{ v.admin_description }}"
+                      data-current-driver-id="{% if v.current_assignment %}{{ v.current_assignment.driver_id }}{% endif %}"
+                      data-current-driver-name="{% if v.current_assignment %}{{ v.current_assignment.driver.display_name }}{% endif %}">
+                {{ v.bus_number }}{% if v.route_label %} · {{ v.route_label }}{% endif %}{% if v.current_assignment %} (Currently: {{ v.current_assignment.driver.display_name }}){% else %} (Unassigned){% endif %}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="vts-admin-note-box mb-3 d-none" data-vehicle-brief aria-live="polite">
+            <div class="vts-admin-note-box__head">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="4" y="11" width="16" height="10" rx="2"/>
+                <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+              </svg>
+              <span>Admin-only vehicle note</span>
+              <span class="ms-auto vts-admin-note-box__meta" data-brief-meta></span>
+            </div>
+            <p class="vts-admin-note-box__body mb-0" data-brief-note></p>
+          </div>
+
+          <div class="mb-3">
+            <label for="modal-assign-driver" class="form-label small fw-semibold mb-1">2. Driver *</label>
+            <select id="modal-assign-driver" name="driver" class="form-select form-select-sm" data-assign-driver required>
+              <option value="">Choose an active driver…</option>
+              {% for d in active_drivers %}
+              <option value="{{ d.id }}"
+                      data-driver-name="{{ d.display_name }}"
+                      data-current-vehicle-id="{% if d.current_assignment %}{{ d.current_assignment.vehicle_id }}{% endif %}"
+                      data-current-vehicle-name="{% if d.current_assignment %}{{ d.current_assignment.vehicle.bus_number }}{% endif %}">
+                {{ d.display_name }}{% if d.employee_id %} ({{ d.employee_id }}){% endif %}{% if d.current_assignment %} · Currently on {{ d.current_assignment.vehicle.bus_number }}{% else %} · Available{% endif %}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="alert alert-warning small py-2 px-3 mb-0 d-none" role="alert" data-assign-warning></div>
+        </div>
+        <div class="modal-footer vts-report-modal__footer">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-primary">Confirm assignment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 4: ADD DRIVER -->
+<div class="modal fade" id="driver-create-modal" tabindex="-1" aria-labelledby="driver-create-title" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content liquid-glass-card vts-report-modal">
+      <form method="post" action="{% url 'web:fleet_driver_create' %}">
+        {% csrf_token %}
+        <div class="modal-header vts-report-modal__header">
+          <div>
+            <p class="vts-panel-eyebrow mb-1">Driver Roster</p>
+            <h2 class="modal-title h5 mb-0 fw-bold" id="driver-create-title">Add driver account</h2>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body vts-report-modal__body">
+          <div class="row g-2 mb-3">
+            <div class="col-sm-6">
+              <label for="driver-create-first" class="form-label small fw-semibold mb-1">First name</label>
+              <input type="text" id="driver-create-first" name="first_name" class="form-control form-control-sm" maxlength="150" placeholder="e.g. Md. Karim">
+            </div>
+            <div class="col-sm-6">
+              <label for="driver-create-last" class="form-label small fw-semibold mb-1">Last name</label>
+              <input type="text" id="driver-create-last" name="last_name" class="form-control form-control-sm" maxlength="150" placeholder="e.g. Uddin">
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-sm-6">
+              <label for="driver-create-username" class="form-label small fw-semibold mb-1">Login username *</label>
+              <input type="text" id="driver-create-username" name="username" class="form-control form-control-sm" maxlength="150" autocomplete="off" placeholder="e.g. driver6" required>
+            </div>
+            <div class="col-sm-6">
+              <label for="driver-create-password" class="form-label small fw-semibold mb-1">Initial password *</label>
+              <input type="password" id="driver-create-password" name="password" class="form-control form-control-sm" minlength="8" autocomplete="new-password" placeholder="Min. 8 characters" required>
+            </div>
+          </div>
+          <div class="row g-2 mb-0">
+            <div class="col-sm-6">
+              <label for="driver-create-empid" class="form-label small fw-semibold mb-1">Employee ID</label>
+              <input type="text" id="driver-create-empid" name="employee_id" class="form-control form-control-sm" maxlength="50" placeholder="e.g. CU-DRV-06">
+            </div>
+            <div class="col-sm-6">
+              <label for="driver-create-phone" class="form-label small fw-semibold mb-1">Phone number</label>
+              <input type="text" id="driver-create-phone" name="phone_number" class="form-control form-control-sm" maxlength="32" placeholder="e.g. +880 17XX-XXXXXX">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer vts-report-modal__footer">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-primary">Create driver</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 5: EDIT DRIVER -->
+<div class="modal fade" id="driver-edit-modal" tabindex="-1" aria-labelledby="driver-edit-title" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content liquid-glass-card vts-report-modal">
+      <form method="post" action="" id="driver-edit-form">
+        {% csrf_token %}
+        <div class="modal-header vts-report-modal__header">
+          <div>
+            <p class="vts-panel-eyebrow mb-1">Driver Profile · <span id="driver-edit-username-label"></span></p>
+            <h2 class="modal-title h5 mb-0 fw-bold" id="driver-edit-title">Edit driver</h2>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body vts-report-modal__body">
+          <div class="row g-2 mb-3">
+            <div class="col-sm-6">
+              <label for="driver-edit-first" class="form-label small fw-semibold mb-1">First name</label>
+              <input type="text" id="driver-edit-first" name="first_name" class="form-control form-control-sm" maxlength="150">
+            </div>
+            <div class="col-sm-6">
+              <label for="driver-edit-last" class="form-label small fw-semibold mb-1">Last name</label>
+              <input type="text" id="driver-edit-last" name="last_name" class="form-control form-control-sm" maxlength="150">
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-sm-6">
+              <label for="driver-edit-empid" class="form-label small fw-semibold mb-1">Employee ID</label>
+              <input type="text" id="driver-edit-empid" name="employee_id" class="form-control form-control-sm" maxlength="50">
+            </div>
+            <div class="col-sm-6">
+              <label for="driver-edit-phone" class="form-label small fw-semibold mb-1">Phone number</label>
+              <input type="text" id="driver-edit-phone" name="phone_number" class="form-control form-control-sm" maxlength="32">
+            </div>
+          </div>
+          <div class="mb-0">
+            <label for="driver-edit-password" class="form-label small fw-semibold mb-1">Reset password (optional)</label>
+            <input type="password" id="driver-edit-password" name="new_password" class="form-control form-control-sm"
+                   autocomplete="new-password" placeholder="Leave blank to keep current password">
+          </div>
+        </div>
+        <div class="modal-footer vts-report-modal__footer">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-primary">Save driver</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block body_js %}
+<script src="{% static 'js/fleet-manage.js' %}?v=vts-ui-21"></script>
+{% endblock %}

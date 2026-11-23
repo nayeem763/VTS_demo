@@ -8,8 +8,8 @@
   <link rel="icon" type="image/svg+xml" href="{% static 'img/cu-vts-logo.svg' %}?v=vts-ui-10">
   <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
   <link rel="stylesheet" href="{% static 'vendor/leaflet/leaflet.css' %}">
-  <link rel="stylesheet" href="{% static 'css/app.css' %}?v=vts-ui-20">
-  <link rel="stylesheet" href="{% static 'css/liquid-aurora.css' %}?v=vts-ui-20">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}?v=vts-ui-21">
+  <link rel="stylesheet" href="{% static 'css/liquid-aurora.css' %}?v=vts-ui-21">
   <script src="{% static 'js/thema.js' %}?v=vts-ui-11"></script>
   {% block extra_head %}{% endblock %}
 </head>
@@ -78,6 +78,15 @@
                   <rect x="3.5" y="14.5" width="7" height="6" rx="1.5"/>
                 </svg>
                 <span>Dashboard</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link {% block nav_fleet %}{% endblock %}" href="{% url 'web:fleet_manage' %}">
+                <svg class="vts-nav-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="4" y="4" width="16" height="12" rx="2.5"/>
+                  <path d="M4 11h16M7 16v2.5M17 16v2.5"/>
+                </svg>
+                <span>Fleet</span>
               </a>
             </li>
             <li class="nav-item">
